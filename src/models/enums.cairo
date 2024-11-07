@@ -9,12 +9,10 @@
 
 use starknet::ContractAddress;
 use zktt::models::structs::{
-    ActionChainReorg, ActionClaimYield, ActionFrontrun, ActionHardFork, ActionMEVBoost,
-    ActionPriorityFee, ActionReplayAttack, ActionSoftFork, ActionGasFee, ActionMajorityAttack,
+    ActionChainReorg, ActionClaimYield, ActionFrontrun,
+    ActionPriorityFee, ActionReplayAttack, ActionGasFee, ActionFiftyOnePercentAttack,
     StructAsset, StructBlockchain
 };
-// TODO: Add comments to each component
-// TODO: Remove MEVBoost and change names per C designs
 
 #[derive(Drop, Serde, Clone, Introspect, PartialEq, Debug)]
 pub enum EnumCard {
@@ -23,13 +21,11 @@ pub enum EnumCard {
     ChainReorg: ActionChainReorg,
     ClaimYield: ActionClaimYield,
     GasFee: ActionGasFee,
-    HardFork: ActionHardFork,
-    MEVBoost: ActionMEVBoost,
+    // HardFork: ActionHardFork,
     PriorityFee: ActionPriorityFee,
-    SoftFork: ActionSoftFork,
     ReplayAttack: ActionReplayAttack,
     FrontRun: ActionFrontrun,
-    MajorityAttack: ActionMajorityAttack
+    FiftyOnePercentAttack: ActionFiftyOnePercentAttack
 }
 
 #[derive(Drop, Copy, Serde, PartialEq, Introspect, Debug)]
@@ -59,11 +55,8 @@ pub enum EnumGasFeeType {
     AgainstTwo: (EnumBlockchainType, EnumBlockchainType),
 }
 
-// TODO: Remove Immutable from enum
-
 #[derive(Drop, Serde, Copy, PartialEq, Introspect, Debug)]
 pub enum EnumBlockchainType {
-    Immutable,
     Blue,
     DarkBlue,
     Gold,

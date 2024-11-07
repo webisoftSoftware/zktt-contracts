@@ -12,8 +12,7 @@ use core::fmt::{Display, Formatter, Error};
 use origami_random::deck::{Deck, DeckTrait};
 use zktt::models::structs::{
     StructAsset, StructBlockchain, StructAssetGroup, ActionPriorityFee, ActionChainReorg,
-    ActionClaimYield, ActionFrontrun, ActionHardFork, ActionMEVBoost, ActionReplayAttack,
-    ActionSoftFork, ActionGasFee, ActionMajorityAttack
+    ActionClaimYield, ActionFrontrun, ActionReplayAttack, ActionGasFee, ActionFiftyOnePercentAttack
 };
 use zktt::models::enums::{
     EnumCard, EnumBlockchainType, EnumGasFeeType, EnumMoveError, EnumPlayerTarget
@@ -137,6 +136,7 @@ impl ActionFrontrunDisplay of Display<ActionFrontrun> {
     }
 }
 
+/*
 impl ActionHardForkDisplay of Display<ActionHardFork> {
     fn fmt(self: @ActionHardFork, ref f: Formatter) -> Result<(), Error> {
         let str: ByteArray = format!("Deny: Value {0}, Index {1}", *self.m_value, *self.m_index);
@@ -144,16 +144,7 @@ impl ActionHardForkDisplay of Display<ActionHardFork> {
         return Result::Ok(());
     }
 }
-
-impl ActionMEVBoostDisplay of Display<ActionMEVBoost> {
-    fn fmt(self: @ActionMEVBoost, ref f: Formatter) -> Result<(), Error> {
-        let str: ByteArray = format!(
-            "MEV Boost: Value {0}, Index {1}", *self.m_value, *self.m_index
-        );
-        f.buffer.append(@str);
-        return Result::Ok(());
-    }
-}
+*/
 
 impl ActionPriorityFeeDisplay of Display<ActionPriorityFee> {
     fn fmt(self: @ActionPriorityFee, ref f: Formatter) -> Result<(), Error> {
@@ -175,16 +166,6 @@ impl ActionReplayAttackDisplay of Display<ActionReplayAttack> {
     }
 }
 
-impl ActionSoftForkDisplay of Display<ActionSoftFork> {
-    fn fmt(self: @ActionSoftFork, ref f: Formatter) -> Result<(), Error> {
-        let str: ByteArray = format!(
-            "Soft Fork: Value {0}, Index {1}", *self.m_value, *self.m_index
-        );
-        f.buffer.append(@str);
-        return Result::Ok(());
-    }
-}
-
 impl EnumCardDisplay of Display<EnumCard> {
     fn fmt(self: @EnumCard, ref f: Formatter) -> Result<(), Error> {
         match self {
@@ -200,10 +181,12 @@ impl EnumCardDisplay of Display<EnumCard> {
                 let str: ByteArray = format!("{data}");
                 f.buffer.append(@str);
             },
+            /*
             EnumCard::HardFork(data) => {
                 let str: ByteArray = format!("{data}");
                 f.buffer.append(@str);
             },
+            */
             EnumCard::PriorityFee(data) => {
                 let str: ByteArray = format!("{data}");
                 f.buffer.append(@str);
@@ -212,7 +195,7 @@ impl EnumCardDisplay of Display<EnumCard> {
                 let str: ByteArray = format!("{data}");
                 f.buffer.append(@str);
             },
-            EnumCard::MajorityAttack(data) => {
+            EnumCard::FiftyOnePercentAttack(data) => {
                 let str: ByteArray = format!("{data}");
                 f.buffer.append(@str);
             },
@@ -225,10 +208,6 @@ impl EnumCardDisplay of Display<EnumCard> {
 impl EnumBlockchainTypeDisplay of Display<EnumBlockchainType> {
     fn fmt(self: @EnumBlockchainType, ref f: Formatter) -> Result<(), Error> {
         match self {
-            EnumBlockchainType::Immutable(_) => {
-                let str: ByteArray = format!("Immutable");
-                f.buffer.append(@str);
-            },
             EnumBlockchainType::Blue(_) => {
                 let str: ByteArray = format!("Blue");
                 f.buffer.append(@str);
@@ -330,8 +309,8 @@ impl ActionGasFeeDisplay of Display<ActionGasFee> {
     }
 }
 
-impl ActionMajorityAttackDisplay of Display<ActionMajorityAttack> {
-    fn fmt(self: @ActionMajorityAttack, ref f: Formatter) -> Result<(), Error> {
+impl ActionFiftyOnePercentAttackDisplay of Display<ActionFiftyOnePercentAttack> {
+    fn fmt(self: @ActionFiftyOnePercentAttack, ref f: Formatter) -> Result<(), Error> {
         let mut index = 0;
         while index < self.m_set.len() {
             if let Option::Some(bc) = self.m_set.get(index) {
@@ -359,13 +338,11 @@ impl EnumCardInto of Into<@EnumCard, ByteArray> {
             EnumCard::ChainReorg(_) => "Chain Reorg",
             EnumCard::ClaimYield(_) => "Claim Yield",
             EnumCard::GasFee(_) => "Gas Fee",
-            EnumCard::HardFork(_) => "Hardfork",
-            EnumCard::MEVBoost(_) => "MEV Boost",
+            // EnumCard::HardFork(_) => "Hardfork",
             EnumCard::PriorityFee(_) => "Priority Fee",
             EnumCard::ReplayAttack(_) => "Replay Attack",
-            EnumCard::SoftFork(_) => "Soft Fork",
             EnumCard::FrontRun(_) => "Frontrun",
-            EnumCard::MajorityAttack(_) => "51% Attack",
+            EnumCard::FiftyOnePercentAttack(_) => "51% Attack",
         };
     }
 }
@@ -532,7 +509,6 @@ impl DeckImpl of IDeck {
         bc_type: @EnumBlockchainType
     ) -> bool {
         return match bc_type {
-            EnumBlockchainType::Immutable(_) => { return false; },
             EnumBlockchainType::Blue(_) | EnumBlockchainType::DarkBlue(_) |
             EnumBlockchainType::Gold(_) => {
                 if asset_group_array.len() == 2 {
@@ -560,7 +536,6 @@ impl DeckImpl of IDeck {
 impl EnumBlockchainTypeImpl of IEnumBlockchainType {
     fn get_boost_array(self: @EnumBlockchainType) -> Array<u8> {
         return match self {
-            EnumBlockchainType::Immutable => { return array![]; },
             EnumBlockchainType::Blue => { return array![1, 2]; },
             EnumBlockchainType::DarkBlue => { return array![3, 8]; },
             EnumBlockchainType::Gold => { return array![1, 2]; },
@@ -594,13 +569,11 @@ impl EnumCardImpl of IEnumCard {
             EnumCard::ChainReorg(data) => { return *data.m_index; },
             EnumCard::ClaimYield(data) => { return *data.m_index; },
             EnumCard::GasFee(data) => { return *data.m_index; },
-            EnumCard::HardFork(data) => { return *data.m_index; },
-            EnumCard::MEVBoost(data) => { return *data.m_index; },
+            // EnumCard::HardFork(data) => { return *data.m_index; },
             EnumCard::PriorityFee(data) => { return *data.m_index; },
             EnumCard::ReplayAttack(data) => { return *data.m_index; },
-            EnumCard::SoftFork(data) => { return *data.m_index; },
             EnumCard::FrontRun(data) => { return *data.m_index; },
-            EnumCard::MajorityAttack(_) => { return 0; }
+            EnumCard::FiftyOnePercentAttack(_) => { return 0; }
         };
     }
 
@@ -615,13 +588,11 @@ impl EnumCardImpl of IEnumCard {
             EnumCard::ChainReorg(data) => { return *data.m_value; },
             EnumCard::ClaimYield(data) => { return *data.m_value; },
             EnumCard::GasFee(data) => { return *data.m_value; },
-            EnumCard::HardFork(data) => { return *data.m_value; },
-            EnumCard::MEVBoost(data) => { return *data.m_value; },
+            // EnumCard::HardFork(data) => { return *data.m_value; },
             EnumCard::PriorityFee(data) => { return *data.m_value; },
             EnumCard::ReplayAttack(data) => { return *data.m_value; },
-            EnumCard::SoftFork(data) => { return *data.m_value; },
             EnumCard::FrontRun(data) => { return *data.m_value; },
-            EnumCard::MajorityAttack(data) => { return *data.m_value; }
+            EnumCard::FiftyOnePercentAttack(data) => { return *data.m_value; }
         };
     }
 
@@ -647,16 +618,13 @@ impl EnumCardImpl of IEnumCard {
                 data.m_index -= 1;
                 return EnumCard::GasFee(data);
             },
+            /*
             EnumCard::HardFork(mut data) => {
                 assert!(data.m_index > 0, "No more indices left for {0}", data);
                 data.m_index -= 1;
                 return EnumCard::HardFork(data);
             },
-            EnumCard::MEVBoost(mut data) => {
-                assert!(data.m_index > 0, "No more indices left for {0}", data);
-                data.m_index -= 1;
-                return EnumCard::MEVBoost(data);
-            },
+            */
             EnumCard::PriorityFee(mut data) => {
                 assert!(data.m_index > 0, "No more indices left for {0}", data);
                 data.m_index -= 1;
@@ -667,20 +635,15 @@ impl EnumCardImpl of IEnumCard {
                 data.m_index -= 1;
                 return EnumCard::ReplayAttack(data);
             },
-            EnumCard::SoftFork(mut data) => {
-                assert!(data.m_index > 0, "No more indices left for {0}", data);
-                data.m_index -= 1;
-                return EnumCard::SoftFork(data);
-            },
             EnumCard::FrontRun(mut data) => {
                 assert!(data.m_index > 0, "No more indices left for {0}", data);
                 data.m_index -= 1;
                 return EnumCard::FrontRun(data);
             },
-            EnumCard::MajorityAttack(mut data) => {
+            EnumCard::FiftyOnePercentAttack(mut data) => {
                 assert!(data.m_index > 0, "No more indices left for {0}", data);
                 data.m_index -= 1;
-                return EnumCard::MajorityAttack(data);
+                return EnumCard::FiftyOnePercentAttack(data);
             },
             _ => { return self.clone(); }
         };

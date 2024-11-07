@@ -58,8 +58,8 @@ impl ActionGasFeeEq of PartialEq<ActionGasFee> {
     }
 }
 
-impl ActionMajorityAttackEq of PartialEq<ActionMajorityAttack> {
-    fn eq(lhs: @ActionMajorityAttack, rhs: @ActionMajorityAttack) -> bool {
+impl ActionFiftyOnePercentAttackEq of PartialEq<ActionFiftyOnePercentAttack> {
+    fn eq(lhs: @ActionFiftyOnePercentAttack, rhs: @ActionFiftyOnePercentAttack) -> bool {
         let mut index: usize = 0;
         return loop {
             if index >= lhs.m_set.len() {
@@ -106,21 +106,16 @@ struct ActionGasFee {
     m_index: u8
 }
 
+/*
 #[derive(Drop, Serde, Clone, Introspect, PartialEq, Debug)]
 struct ActionHardFork {
     m_value: u8,
     m_index: u8
 }
-
-#[derive(Drop, Serde, Clone, Introspect, PartialEq, Debug)]
-struct ActionMEVBoost {
-    m_full_set: Array<ByteArray>,
-    m_value: u8,
-    m_index: u8
-}
+\*/
 
 #[derive(Drop, Serde, Clone, Introspect, Debug)]
-struct ActionMajorityAttack {
+struct ActionFiftyOnePercentAttack {
     m_owner: ContractAddress,
     m_set: Array<ByteArray>,
     m_value: u8,
@@ -135,13 +130,6 @@ struct ActionPriorityFee {
 
 #[derive(Drop, Serde, Clone, Introspect, PartialEq, Debug)]
 struct ActionReplayAttack {
-    m_value: u8,
-    m_index: u8
-}
-
-#[derive(Drop, Serde, Clone, Introspect, PartialEq, Debug)]
-struct ActionSoftFork {
-    m_full_set: Array<ByteArray>,
     m_value: u8,
     m_index: u8
 }
