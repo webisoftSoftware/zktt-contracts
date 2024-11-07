@@ -16,7 +16,7 @@ use zktt::models::structs::{
 // TODO: Add comments to each component
 // TODO: Remove MEVBoost and change names per C designs
 
-#[derive(Drop, Serde, Clone, PartialEq, Introspect, Debug)]
+#[derive(Drop, Serde, Clone, Introspect, PartialEq, Debug)]
 pub enum EnumCard {
     Asset: StructAsset,
     Blockchain: StructBlockchain,

@@ -8,13 +8,74 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 use starknet::ContractAddress;
-use zktt::models::enums::{EnumCard, EnumBlockchainType, EnumGasFeeType, EnumMoveError, EnumPlayerTarget};
+use zktt::models::enums::{
+    EnumCard, EnumBlockchainType, EnumGasFeeType, EnumMoveError, EnumPlayerTarget
+};
 
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+/////////////////////////////// PARTIALEQ /////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 
-// TODO: Add comments to each component
+impl StructAssetEq of PartialEq<StructAsset> {
+    fn eq(lhs: @StructAsset, rhs: @StructAsset) -> bool {
+        return lhs.m_name == rhs.m_name && lhs.m_index == rhs.m_index;
+    }
+}
+
+impl StructAssetGroupEq of PartialEq<StructAssetGroup> {
+    fn eq(lhs: @StructAssetGroup, rhs: @StructAssetGroup) -> bool {
+        let mut index: usize = 0;
+        return loop {
+            if index >= lhs.m_set.len() {
+                break true;
+            }
+
+            if lhs.m_set.at(index) != rhs.m_set.at(index) {
+                break false;
+            }
+            index += 1;
+        };
+    }
+}
+
+impl StructBlockchainEq of PartialEq<StructBlockchain> {
+    fn eq(lhs: @StructBlockchain, rhs: @StructBlockchain) -> bool {
+        return lhs.m_name == rhs.m_name;
+    }
+}
+
+impl ActionFrontrunEq of PartialEq<ActionFrontrun> {
+    fn eq(lhs: @ActionFrontrun, rhs: @ActionFrontrun) -> bool {
+        return lhs.m_index == rhs.m_index;
+    }
+}
+
+impl ActionGasFeeEq of PartialEq<ActionGasFee> {
+    fn eq(lhs: @ActionGasFee, rhs: @ActionGasFee) -> bool {
+        return lhs.m_index == rhs.m_index;
+    }
+}
+
+impl ActionMajorityAttackEq of PartialEq<ActionMajorityAttack> {
+    fn eq(lhs: @ActionMajorityAttack, rhs: @ActionMajorityAttack) -> bool {
+        let mut index: usize = 0;
+        return loop {
+            if index >= lhs.m_set.len() {
+                break true;
+            }
+
+            if lhs.m_set.at(index) != rhs.m_set.at(index) {
+                break false;
+            }
+            index += 1;
+        };
+    }
+}
 
 #[derive(Drop, Serde, Clone, Introspect, PartialEq, Debug)]
-pub struct ActionChainReorg {
+struct ActionChainReorg {
     m_self_blockchain_name: ByteArray,
     m_opponent_blockchain_name: ByteArray,
     m_value: u8,
@@ -22,21 +83,22 @@ pub struct ActionChainReorg {
 }
 
 #[derive(Drop, Serde, Clone, Introspect, PartialEq, Debug)]
-pub struct ActionClaimYield {
+struct ActionClaimYield {
     m_value: u8,
     m_index: u8
 }
 
 #[derive(Drop, Serde, Clone, Introspect, Debug)]
-pub struct ActionFrontrun {
+struct ActionFrontrun {
     m_blockchain_name: ByteArray,
     m_value: u8,
     m_index: u8
 }
 
 #[derive(Drop, Serde, Clone, Introspect, Debug)]
-pub struct ActionGasFee {
+struct ActionGasFee {
     m_players_affected: EnumPlayerTarget,
+    // First blockchain (target one player), second blockchain (Target all players).
     m_blockchain_type_affected: EnumGasFeeType,
     m_set_applied: Array<StructBlockchain>,
     m_color_chosen: Option<EnumBlockchainType>,
@@ -45,44 +107,40 @@ pub struct ActionGasFee {
 }
 
 #[derive(Drop, Serde, Clone, Introspect, PartialEq, Debug)]
-pub struct ActionHardFork {
+struct ActionHardFork {
     m_value: u8,
     m_index: u8
 }
 
 #[derive(Drop, Serde, Clone, Introspect, PartialEq, Debug)]
-pub struct ActionMEVBoost {
+struct ActionMEVBoost {
     m_full_set: Array<ByteArray>,
     m_value: u8,
     m_index: u8
 }
 
-
 #[derive(Drop, Serde, Clone, Introspect, Debug)]
-pub struct ActionMajorityAttack {
+struct ActionMajorityAttack {
     m_owner: ContractAddress,
     m_set: Array<ByteArray>,
     m_value: u8,
     m_index: u8
 }
 
-
 #[derive(Drop, Serde, Clone, Introspect, PartialEq, Debug)]
-pub struct ActionPriorityFee {
-    m_value: u8,
-    m_index: u8
-}
-
-// TODO: Review ReplayAttack and SoftFork
-
-#[derive(Drop, Serde, Clone, Introspect, PartialEq, Debug)]
-pub struct ActionReplayAttack {
+struct ActionPriorityFee {
     m_value: u8,
     m_index: u8
 }
 
 #[derive(Drop, Serde, Clone, Introspect, PartialEq, Debug)]
-pub struct ActionSoftFork {
+struct ActionReplayAttack {
+    m_value: u8,
+    m_index: u8
+}
+
+#[derive(Drop, Serde, Clone, Introspect, PartialEq, Debug)]
+struct ActionSoftFork {
     m_full_set: Array<ByteArray>,
     m_value: u8,
     m_index: u8

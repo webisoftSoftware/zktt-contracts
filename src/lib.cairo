@@ -11,12 +11,7 @@ mod models {
     mod components;
     mod enums;
     mod structs;
-    mod traits {
-        mod display;
-        mod into;
-        mod game;
-        mod partialeq;
-    }
+    mod traits;
 }
 
 mod systems {
