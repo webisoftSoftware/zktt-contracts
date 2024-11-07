@@ -1,1 +1,3 @@
-mod test_world;
+mod test_game;
+mod test_player;
+mod test_actions;

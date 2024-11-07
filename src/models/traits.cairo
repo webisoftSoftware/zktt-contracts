@@ -449,6 +449,7 @@ impl DeckImpl of IDeck {
             let mut index = 0;
             while let Option::Some(card) = self.m_cards.pop_front() {
                 if index == index_found {
+                    index += 1;
                     continue;
                 }
 
@@ -669,12 +670,14 @@ impl GameImpl of IGame {
             let mut index = 0;
             while let Option::Some(player) = self.m_players.pop_front() {
                 if index == index_found {
+                    index += 1;
                     continue;
                 }
 
                 new_array.append(player);
                 index += 1;
             };
+            self.m_players = new_array;
         }
     }
 
@@ -755,6 +758,7 @@ impl HandImpl of IHand {
             let mut new_array: Array<EnumCard> = ArrayTrait::new();
             while let Option::Some(card) = self.m_cards.pop_front() {
                 if index == index_found {
+                    index += 1;
                     continue;
                 }
                 new_array.append(card);
@@ -773,7 +777,6 @@ impl DepositImpl of IDeposit {
 
     fn add(ref self: ComponentDeposit, mut card: EnumCard) -> () {
         assert!(!card.is_blockchain(), "Blockchains cannot be added to money pile");
-
         self.m_total_value += card.get_value();
         self.m_cards.append(card);
         return ();
@@ -797,11 +800,16 @@ impl DepositImpl of IDeposit {
 
     fn remove(ref self: ComponentDeposit, card_name: @ByteArray) -> () {
         if let Option::Some(index_found) = self.contains(card_name) {
-            self.m_total_value -= self.m_cards.at(index_found).get_value();
+            if self.m_total_value < self.m_cards.at(index_found).get_value() {
+               self.m_total_value = 0;
+            } else {
+                self.m_total_value -= self.m_cards.at(index_found).get_value();
+            }
             let mut new_array: Array<EnumCard> = ArrayTrait::new();
             let mut index: usize = 0;
             while let Option::Some(card) = self.m_cards.pop_front() {
                 if index == index_found {
+                    index += 1;
                     continue;
                 }
 

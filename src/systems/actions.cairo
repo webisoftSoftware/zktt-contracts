@@ -187,8 +187,7 @@ mod action_system {
             assert!(player.get_debt().is_some(), "Player is not in debt");
 
             let mut recipient_stash: ComponentDeposit = world.read_model(recipient);
-            let mut recipient_deck: ComponentDeposit = world.read_model(recipient);
-
+            let mut recipient_deck: ComponentDeck = world.read_model(recipient);
             while let Option::Some(card) = pay.pop_front() {
                 if !card.is_blockchain() {
                     payee_stash.remove(@card.get_name());
@@ -198,7 +197,6 @@ mod action_system {
                     recipient_deck.add(card);
                 }
             };
-
             player.m_in_debt = Option::None;
             world.write_model(@recipient_stash);
             world.write_model(@recipient_deck);
@@ -377,7 +375,7 @@ mod action_system {
                 },
                 _ => panic!("Invalid or illegal move!")
             };
-
+            world.write_model(@hand);
             return ();
         }
 
