@@ -26,7 +26,9 @@ use crate::systems::actions::action_system;
 use crate::systems::actions::{IActionSystemDispatcher, IActionSystemDispatcherTrait};
 use crate::systems::game::{IGameSystemDispatcher, IGameSystemDispatcherTrait, game_system};
 use crate::systems::player::{IPlayerSystemDispatcher, IPlayerSystemDispatcherTrait};
-use crate::models::components::{ComponentGame, ComponentHand, ComponentDeposit, ComponentPlayer, ComponentDeck, ComponentDealer};
+use crate::models::components::{
+    ComponentGame, ComponentHand, ComponentDeposit, ComponentPlayer, ComponentDeck, ComponentDealer
+};
 use crate::models::traits::{ComponentPlayerDisplay, IDealer, IAsset};
 use crate::tests::utils::namespace_def;
 use crate::tests::integration::test_game::deploy_game;
@@ -34,17 +36,18 @@ use crate::tests::integration::test_player::deploy_player;
 
 use dojo::model::{ModelStorage, ModelValueStorage, ModelStorageTest, ModelValueStorageTest};
 use dojo::world::{IWorldDispatcher, IWorldDispatcherTrait, WorldStorage, WorldStorageTrait};
-use dojo_cairo_test::{spawn_test_world, NamespaceDef, TestResource, ContractDefTrait, WorldStorageTestTrait};
+use dojo_cairo_test::{
+    spawn_test_world, NamespaceDef, TestResource, ContractDefTrait, WorldStorageTestTrait
+};
 
 // Deploy world with supplied components registered.
 pub fn deploy_actions(ref world: WorldStorage) -> IActionSystemDispatcher {
-
     let (contract_address, _) = world.dns(@"action_system").unwrap();
 
     let system: IActionSystemDispatcher = IActionSystemDispatcher { contract_address };
 
     let system_def = ContractDefTrait::new(@"zktt", @"action_system")
-                            .with_writer_of([dojo::utils::bytearray_hash(@"zktt")].span());
+        .with_writer_of([dojo::utils::bytearray_hash(@"zktt")].span());
 
     world.sync_perms_and_inits([system_def].span());
 
@@ -222,8 +225,7 @@ fn test_pay_fee() {
 
     // Setup debt and payment cards
     let payment_cards: Array<EnumCard> = array![
-        EnumCard::Asset(IAsset::new("ETH [1]", 1, 1)),
-        EnumCard::Asset(IAsset::new("ETH [1]", 1, 1))
+        EnumCard::Asset(IAsset::new("ETH [1]", 1, 1)), EnumCard::Asset(IAsset::new("ETH [1]", 1, 1))
     ];
     let mut player_deposit: ComponentDeposit = world.read_model(first_caller);
     player_deposit.m_cards = payment_cards.clone();
@@ -234,7 +236,7 @@ fn test_pay_fee() {
     world.write_model_test(@player);
 
     let mut deposit: ComponentDeposit = world.read_model(first_caller);
-    
+
     deposit.m_cards = payment_cards.clone();
     world.write_model_test(@deposit);
 

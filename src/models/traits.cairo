@@ -801,7 +801,7 @@ impl DepositImpl of IDeposit {
     fn remove(ref self: ComponentDeposit, card_name: @ByteArray) -> () {
         if let Option::Some(index_found) = self.contains(card_name) {
             if self.m_total_value < self.m_cards.at(index_found).get_value() {
-               self.m_total_value = 0;
+                self.m_total_value = 0;
             } else {
                 self.m_total_value -= self.m_cards.at(index_found).get_value();
             }

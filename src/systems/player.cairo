@@ -30,19 +30,20 @@ mod player_system {
 
     #[abi(embed_v0)]
     impl PlayerSystemImpl of super::IPlayerSystem<ContractState> {
-
         //////////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////////
         /////////////////////////////// EXTERNAL /////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////////
 
-        /// Allows a player to join the table deployed, as long as the game hasn't started/ended yet.
+        /// Allows a player to join the table deployed, as long as the game hasn't started/ended
+        /// yet.
         ///
         /// Inputs:
         /// *world*: The mutable reference of the world to write components to.
         /// *username*: The user-selected displayed name identifyinh the current player's name.
-        /// Note that the current implementation allows for multiple users to have the same username.
+        /// Note that the current implementation allows for multiple users to have the same
+        /// username.
         ///
         /// Output:
         /// None.
@@ -94,13 +95,12 @@ mod player_system {
 
     #[generate_trait]
     impl InternalImpl of InternalTrait {
-
         //////////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////////
         /////////////////////////////// INTERNAL /////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////////
-        
+
         /// Use the default namespace "zktt". This function is handy since the ByteArray
         /// can't be const.
         fn world_default(self: @ContractState) -> dojo::world::WorldStorage {

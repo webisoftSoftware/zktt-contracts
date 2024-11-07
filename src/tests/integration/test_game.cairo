@@ -19,7 +19,6 @@
 // DEALINGS IN THE SOFTWARE.
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
 use starknet::ContractAddress;
 use dojo::model::{ModelStorage, ModelValueStorage, ModelStorageTest};
 use dojo::world::{WorldStorage, WorldStorageTrait};
@@ -44,19 +43,16 @@ use crate::models::traits::{ComponentPlayerDisplay, IDealer};
 
 // Deploy world with supplied components registered.
 pub fn deploy_game(ref world: WorldStorage) -> IGameSystemDispatcher {
-
     let (contract_address, _) = world.dns(@"game_system").unwrap();
 
     let system: IGameSystemDispatcher = IGameSystemDispatcher { contract_address };
 
     let system_def = ContractDefTrait::new(@"zktt", @"game_system")
-                            .with_writer_of([dojo::utils::bytearray_hash(@"zktt")].span());
+        .with_writer_of([dojo::utils::bytearray_hash(@"zktt")].span());
 
     world.sync_perms_and_inits([system_def].span());
     let cards_in_order = game_system::InternalImpl::_create_cards();
-    let dealer: ComponentDealer = IDealer::new(
-        world.dispatcher.contract_address, cards_in_order
-    );
+    let dealer: ComponentDealer = IDealer::new(world.dispatcher.contract_address, cards_in_order);
     world.write_model(@dealer);
 
     return system;

@@ -40,14 +40,14 @@ mod action_system {
 
     #[abi(embed_v0)]
     impl ActionSystemImpl of super::IActionSystem<ContractState> {
-
         //////////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////////
         /////////////////////////////// EXTERNAL /////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////////
 
-        /// Adds two new cards from the dealer's deck to the active caller's hand, during their turn.
+        /// Adds two new cards from the dealer's deck to the active caller's hand, during their
+        /// turn.
         /// This can only happen once per turn, at the beginning of it (first move).
         ///
         /// Inputs:
@@ -98,8 +98,9 @@ mod action_system {
             world.write_model(@dealer);
             world.write_model(@player);
         }
-        
-        /// Adds two new cards from the dealer's deck to the active caller's hand, during their turn.
+
+        /// Adds two new cards from the dealer's deck to the active caller's hand, during their
+        /// turn.
         /// This can only happen once per turn, at the beginning of it (first move).
         ///
         /// Inputs:
@@ -132,7 +133,8 @@ mod action_system {
         /// Move around cards in the caller's deck, without it counting as a move. Can only happen
         /// during the caller's turn. This system is for when a player wants to stack/unstack
         /// blockchains together to form/break asset groups, depending on their strategy.
-        /// As expected, only matching colors can be stacked on top of each other (or immutable card).
+        /// As expected, only matching colors can be stacked on top of each other (or immutable
+        /// card).
         ///
         /// Inputs:
         /// *world*: The mutable reference of the world to write components to.
@@ -208,7 +210,6 @@ mod action_system {
 
     #[generate_trait]
     impl InternalImpl of InternalTrait {
-
         //////////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////////
         /////////////////////////////// INTERNAL /////////////////////////////////////

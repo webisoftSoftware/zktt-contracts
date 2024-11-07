@@ -22,14 +22,18 @@
 use crate::systems::player::player_system;
 use crate::systems::game::{game_system, IGameSystemDispatcher, IGameSystemDispatcherTrait};
 use crate::systems::player::{IPlayerSystemDispatcher, IPlayerSystemDispatcherTrait};
-use crate::models::components::{ComponentGame, ComponentPlayer, ComponentDealer, ComponentHand, ComponentDeck, ComponentDeposit};
+use crate::models::components::{
+    ComponentGame, ComponentPlayer, ComponentDealer, ComponentHand, ComponentDeck, ComponentDeposit
+};
 use crate::models::traits::{ComponentPlayerDisplay, IDealer};
 use crate::tests::utils::namespace_def;
 use crate::tests::integration::test_game::deploy_game;
 
 use dojo::model::{ModelStorage, ModelValueStorage};
 use dojo::world::{IWorldDispatcher, IWorldDispatcherTrait, WorldStorage, WorldStorageTrait};
-use dojo_cairo_test::{spawn_test_world, NamespaceDef, TestResource, ContractDefTrait, WorldStorageTestTrait};
+use dojo_cairo_test::{
+    spawn_test_world, NamespaceDef, TestResource, ContractDefTrait, WorldStorageTestTrait
+};
 
 use starknet::ContractAddress;
 
@@ -40,7 +44,7 @@ pub fn deploy_player(ref world: WorldStorage) -> IPlayerSystemDispatcher {
     let system: IPlayerSystemDispatcher = IPlayerSystemDispatcher { contract_address };
 
     let system_def = ContractDefTrait::new(@"zktt", @"player_system")
-                            .with_writer_of([dojo::utils::bytearray_hash(@"zktt")].span());
+        .with_writer_of([dojo::utils::bytearray_hash(@"zktt")].span());
 
     world.sync_perms_and_inits([system_def].span());
     return system;
@@ -159,10 +163,10 @@ fn test_leave_game() {
     // Verify player components cleaned up
     let hand: ComponentHand = world.read_model(first_caller);
     assert!(hand.m_cards.is_empty(), "Player hand should be empty");
-    
+
     let deck: ComponentDeck = world.read_model(first_caller);
     assert!(deck.m_cards.is_empty(), "Player deck should be empty");
-    
+
     let deposit: ComponentDeposit = world.read_model(first_caller);
     assert!(deposit.m_cards.is_empty(), "Player deposit should be empty");
 }
@@ -196,7 +200,6 @@ fn test_leave_nonexistent_player() {
     player_system.join("Player 2");
     game_system.start();
 
-    
     // Try to leave with non-existent player
     starknet::testing::set_contract_address(third_caller);
     player_system.leave();
