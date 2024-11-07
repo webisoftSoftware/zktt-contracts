@@ -7,6 +7,9 @@
 ////////////////////////////////                                    ////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+use starknet::ContractAddress;
+use zktt::models::enums::{EnumCard, EnumGameState};
+
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 /////////////////////////////// PARTIALEQ /////////////////////////////////
@@ -33,11 +36,16 @@ impl HandPartialEq of PartialEq<ComponentHand> {
     }
 }
 
-// TODO: Add comments to each component
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+/////////////////////////////// COMPONENTS /////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
 
-use starknet::ContractAddress;
-use zktt::models::enums::{EnumCard, EnumGameState};
-
+/// Component that represents the game state and acts as storage to keep track of the number of
+/// players currently at the table.
+///
+/// Per table.
 #[derive(Drop, Serde, Clone, Debug)]
 #[dojo::model]
 pub struct ComponentGame {
@@ -48,6 +56,10 @@ pub struct ComponentGame {
     pub m_player_in_turn: ContractAddress
 }
 
+/// Component that represents the Pile of cards in the middle of the board, not owned by any player
+/// yet.
+///
+/// Per table.
 #[derive(Drop, Serde, Clone, Debug)]
 #[dojo::model]
 pub struct ComponentDealer {
@@ -56,6 +68,9 @@ pub struct ComponentDealer {
     pub m_cards: Array<EnumCard>
 }
 
+/// Component that represents the deck containing all blockchains not in the player's hand.
+///
+/// Per player.
 #[derive(Drop, Serde, Clone, Debug)]
 #[dojo::model]
 pub struct ComponentDeck {
@@ -64,6 +79,9 @@ pub struct ComponentDeck {
     pub m_cards: Array<EnumCard>
 }
 
+/// Component that represents the pile of assets that each player owns in the game.
+///
+/// Per player.
 #[derive(Drop, Serde, Clone, Debug)]
 #[dojo::model]
 pub struct ComponentDeposit {
@@ -73,6 +91,9 @@ pub struct ComponentDeposit {
     pub m_total_value: u8
 }
 
+/// Component that represents the cards held in hand of a player in the game.
+///
+/// Per player.
 #[derive(Drop, Serde, Clone, Debug)]
 #[dojo::model]
 pub struct ComponentHand {
@@ -81,6 +102,10 @@ pub struct ComponentHand {
     pub m_cards: Array<EnumCard>
 }
 
+/// Component that represents a player in the game. Note that the username is not unique, only the
+/// address is.
+///
+/// Per player.
 #[derive(Drop, Serde, Clone, Debug)]
 #[dojo::model]
 pub struct ComponentPlayer {
