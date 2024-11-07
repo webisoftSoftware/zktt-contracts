@@ -1,0 +1,16 @@
+[package]
+name = "zktt_contracts"
+version = "1.0.0"
+
+[cairo]
+sierra-replace-ids = true
+
+[dependencies]
+dojo = { git = "https://github.com/dojoengine/dojo"}
+origami_random = { git = "https://github.com/dojoengine/origami.git"}
+
+[[target.starknet-contract]]
+build-external-contracts = ["dojo::world::world_contract::world"]
+
+[dev-dependencies]
+dojo_cairo_test = { git = "https://github.com/dojoengine/dojo"}
