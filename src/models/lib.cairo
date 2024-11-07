@@ -7,18 +7,7 @@
 ////////////////////////////////                                    ////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-mod actions;
-mod game;
-mod player;
-
-use actions::{IActionSystem, action_system};
-use game::{IGameSystem, game_system}; 
-use player::{IPlayerSystem, player_system};
-
-use actions::IActionSystemDispatcher;
-use game::IGameSystemDispatcher;
-use player::IPlayerSystemDispatcher;
-
-use actions::IActionSystemDispatcherTrait;
-use game::IGameSystemDispatcherTrait;
-use player::IPlayerSystemDispatcherTrait;
+mod components;
+mod enums;
+mod structs;
+mod traits;

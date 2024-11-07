@@ -7,10 +7,6 @@
 ////////////////////////////////                                    ////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-use starknet::ContractAddress;
-use zktt::models::components::{ComponentPlayer, ComponentHand, ComponentDealer, ComponentGame, EnumGameState, EnumCard};
-use dojo::world::IWorldDispatcher;
-
 #[starknet::interface]
 trait IPlayerSystem<T> {
     fn join(ref self: T, username: ByteArray) -> ();
@@ -20,19 +16,18 @@ trait IPlayerSystem<T> {
 
 #[dojo::contract]
 mod player_system {
-    use super::*;
+    use zktt::models::components::{
+        ComponentGame, ComponentHand, ComponentDeck, ComponentDeposit, ComponentPlayer,
+        ComponentDealer
+    };
+    use zktt::models::traits::{
+        IEnumCard, IPlayer, IDeck, IDealer, IHand, IGasFee, IAssetGroup, IDraw, IGame, IAsset,
+        IBlockchain, IDeposit
+    };
+    use zktt::models::enums::{EnumGasFeeType, EnumPlayerTarget, EnumGameState};
+    use dojo::world::IWorldDispatcher;
     use starknet::get_caller_address;
     use dojo::model::ModelStorage;
-
-    #[storage]
-    struct Storage {
-        world: IWorldDispatcher,
-    }
-
-    #[constructor]
-    fn constructor(ref self: ContractState, world: IWorldDispatcher) {
-        self.world.write(world);
-    }
 
     #[abi(embed_v0)]
     impl PlayerSystemImpl of super::IPlayerSystem<ContractState> {
@@ -61,7 +56,7 @@ mod player_system {
             assert!(!player.m_has_drawn, "Cannot draw mid-turn");
 
             let mut dealer: ComponentDealer = world.read_model(world.dispatcher.contract_address);
-            
+
             if draws_five {
                 assert!(hand.m_cards.len() == 0, "Cannot draw five, hand not empty");
                 let mut index: usize = 0;
@@ -76,7 +71,9 @@ mod player_system {
             } else {
                 let card1_opt = dealer.pop_card();
                 let card2_opt = dealer.pop_card();
-                assert!(card1_opt.is_some() && card2_opt.is_some(), "Deck does not have any more cards!");
+                assert!(
+                    card1_opt.is_some() && card2_opt.is_some(), "Deck does not have any more cards!"
+                );
                 hand.add(card1_opt.unwrap());
                 hand.add(card2_opt.unwrap());
             }
@@ -90,15 +87,24 @@ mod player_system {
         fn leave(ref self: ContractState) -> () {
             let mut world = self.world_default();
             let mut game: ComponentGame = world.read_model(world.dispatcher.contract_address);
-            let caller = get_caller_address();
             assert!(game.m_state == EnumGameState::Started, "Game has not started yet");
-            assert!(game.contains_player(@caller).is_some(), "Player not found");
+            assert!(game.contains_player(@get_caller_address()).is_some(), "Player not found");
 
-            game.remove_player(@caller);
-            world.erase_model::<ComponentHand>(caller);
-            world.erase_model::<ComponentDeck>(caller);
-            world.erase_model::<ComponentDeposit>(caller);
+            let mut hand: ComponentHand = world.read_model(get_caller_address());
+            let mut deck: ComponentDeck = world.read_model(get_caller_address());
+            let mut deposit: ComponentDeposit = world.read_model(get_caller_address());
+
+            // TODO: Cleanup after player by setting all card owner's to 0.
+            // hand.discard_cards();
+            // deck.discard_cards();
+            // deposit.discard_cards();
+
+            game.remove_player(@get_caller_address());
+            world.erase_model(@hand);
+            world.erase_model(@deck);
+            world.erase_model(@deposit);
             world.write_model(@game);
+            return ();
         }
     }
 

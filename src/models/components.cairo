@@ -7,10 +7,36 @@
 ////////////////////////////////                                    ////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+/////////////////////////////// PARTIALEQ /////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+
+impl HandPartialEq of PartialEq<ComponentHand> {
+    fn eq(lhs: @ComponentHand, rhs: @ComponentHand) -> bool {
+        let mut index: usize = 0;
+        if lhs.m_cards.len() != rhs.m_cards.len() {
+            return false;
+        }
+
+        return loop {
+            if index >= lhs.m_cards.len() {
+                break true;
+            }
+
+            if lhs.m_cards.at(index) != rhs.m_cards.at(index) {
+                break false;
+            }
+            index += 1;
+        };
+    }
+}
+
 // TODO: Add comments to each component
 
 use starknet::ContractAddress;
-use super::enums::{EnumCard, EnumGameState};
+use zktt::models::enums::{EnumCard, EnumGameState};
 
 #[derive(Drop, Serde, Clone, Debug)]
 #[dojo::model]
