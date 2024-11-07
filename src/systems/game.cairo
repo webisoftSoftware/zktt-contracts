@@ -40,6 +40,15 @@ mod game_system {
 
     #[abi(embed_v0)]
     impl GameSystemImpl of super::IGameSystem<ContractState> {
+        /// Starts the game and denies any new players from joining, as long as there are at
+        /// least two players that have joined for up to a maximum of 5 players.
+        ///
+        /// Inputs:
+        /// *world*: The mutable reference of the world to write components to.
+        ///
+        /// Output:
+        /// None.
+        /// Can Panic?: yes
         fn start(ref self: ContractState) -> () {
             let mut world = self.world_default();
             let seed = world.dispatcher.contract_address;
@@ -61,6 +70,15 @@ mod game_system {
             world.write_model(@game);
         }
 
+        /// Signal the end of a turn for the caller. This renders all other moves forbidden until
+        /// next turn.
+        ///
+        /// Inputs:
+        /// *world*: The mutable reference of the world to write components to.
+        ///
+        /// Output:
+        /// None.
+        /// Can Panic?: yes
         fn end_turn(ref self: ContractState) -> () {
             let mut world = self.world_default();
             let mut game: ComponentGame = world.read_model(world.dispatcher.contract_address);
@@ -78,6 +96,17 @@ mod game_system {
             self.world(@"zktt")
         }
 
+        /// Create the seed to provide to the randomizer for shuffling cards in the deck at the beginning
+        /// of the game. The seed is meant to be a deterministic ranzomized hash, in the event that the
+        /// game needs to be inspected and verified for proof.
+        ///
+        /// Inputs:
+        /// *world*: The mutable reference of the world to write components to.
+        /// *players: The array of all the players that have joined in the world.
+        ///
+        /// Output:
+        /// The resulting seed hash.
+        /// Can Panic?: yes
         fn _generate_seed(world_address: @ContractAddress, players: @Array<ContractAddress>) -> felt252 {
             let mut array_of_felts: Array<felt252> = array![get_block_timestamp().into(), get_tx_info().nonce];
             let mut index: usize = 0;
@@ -88,6 +117,17 @@ mod game_system {
             poseidon_hash_span(array_of_felts.span())
         }
 
+        /// Take cards from the dealer's deck and distribute them across all players at the table.
+        /// Five cards per player.
+        ///
+        /// Inputs:
+        /// *world*: The mutable reference of the world to write components to.
+        /// *players: The mutable reference of all the players that have joined in the world.
+        /// *cards*: The dealer's cards to take cards from.
+        ///
+        /// Output:
+        /// None.
+        /// Can Panic?: yes
         fn _distribute_cards(ref self: ContractState, ref players: Array<ContractAddress>, ref cards: Array<EnumCard>) -> () {
             if players.is_empty() {
                 panic!("There are no players to distribute cards to!");
@@ -111,6 +151,15 @@ mod game_system {
             }
         }
 
+        /// Create the initial deck of cards for the game and assign them to the dealer. Only ran once
+        /// when the contract deploys (sort of acting as a singleton).
+        ///
+        /// Inputs:
+        /// *world*: The mutable reference of the world to write components to.
+        ///
+        /// Output:
+        /// None.
+        /// Can Panic?: yes
         fn dojo_init(ref self: ContractState) {
             let mut world = self.world_default();
             let cards_in_order = _create_cards();

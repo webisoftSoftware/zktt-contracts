@@ -43,6 +43,18 @@ mod action_system {
 
     #[abi(embed_v0)]
     impl ActionSystemImpl of super::IActionSystem<ContractState> {
+        /// Adds two new cards from the dealer's deck to the active caller's hand, during their turn.
+        /// This can only happen once per turn, at the beginning of it (first move).
+        ///
+        /// Inputs:
+        /// *world*: The mutable reference of the world to write components to.
+        /// *draws_five*: Flag indicating if the active caller can draw five cards from the deck
+        /// instead of the typical two. This behavior can only happend if the player has no more
+        /// cards left in their hand at the end of their last turn.
+        ///
+        /// Output:
+        /// None.
+        /// Can Panic?: yes
         fn play(ref self: ContractState, card: EnumCard) -> () {
             let mut world = self.world_default();
             let game: ComponentGame = world.read_model(world.dispatcher.contract_address);
@@ -61,6 +73,18 @@ mod action_system {
             world.write_model(@player);
         }
 
+        /// Move around cards in the caller's deck, without it counting as a move. Can only happen
+        /// during the caller's turn. This system is for when a player wants to stack/unstack
+        /// blockchains together to form/break asset groups, depending on their strategy.
+        /// As expected, only matching colors can be stacked on top of each other (or immutable card).
+        ///
+        /// Inputs:
+        /// *world*: The mutable reference of the world to write components to.
+        /// *card*: Card to move.
+        ///
+        /// Output:
+        /// None.
+        /// Can Panic?: yes
         fn move(ref self: ContractState, card: EnumCard) -> () {
             let mut world = self.world_default();
             let game: ComponentGame = world.read_model(world.dispatcher.contract_address);
@@ -77,6 +101,20 @@ mod action_system {
             world.write_model(@player);
         }
 
+        /// Make the caller pay the recipient the amount owed. This happens when the recipient plays
+        /// the 'Claim' action card beforehand and targets this caller with it. Once the recipient's
+        /// turn is over, the payee(s) will have a status of 'InDebt' which will prompt them to pay
+        /// the fees upon their turn (unless 'HardFork' is played). The payee(s) cannot initiate
+        /// turns until the amount owed has been payed, either partially (if they do not have
+        /// enough funds) or fully.
+        ///
+        /// Inputs:
+        /// *world*: The mutable reference of the world to write components to.
+        /// *card*: Card to move.
+        ///
+        /// Output:
+        /// None.
+        /// Can Panic?: yes
         fn pay_fee(ref self: ContractState, mut pay: Array<EnumCard>, recipient: ContractAddress, payee: ContractAddress) -> () {
             let mut world = self.world_default();
             let game: ComponentGame = world.read_model(world.dispatcher.contract_address);
@@ -115,6 +153,16 @@ mod action_system {
             self.world(@"zktt")
         }
 
+        /// Check to see if the caller has the right to play or move around a card.
+        ///
+        /// Inputs:
+        /// *world*: The immutable reference of the world to retrieve components from.
+        /// *caller: The player requesting to use or move the card.
+        /// *card*: The immutable reference to the card in question.
+        ///
+        /// Output:
+        /// None.
+        /// Can Panic?: yes
         fn _is_owner(ref self: ContractState, card_name: @ByteArray, caller: @ContractAddress) -> bool {
             let mut world = self.world_default();
             let hand: ComponentHand = world.read_model(*caller);
@@ -126,6 +174,17 @@ mod action_system {
             deposit.contains(card_name).is_some()
         }
 
+        /// Take card from player's hand and put it in the discard pile after applying it's action.
+        /// Once a card has been played, it cannot be retrieved back from the discard pile.
+        ///
+        /// Inputs:
+        /// *world*: The mutable reference of the world to write components to.
+        /// *caller: The player requesting to use the card.
+        /// *card*: The card being played.
+        ///
+        /// Output:
+        /// None.
+        /// Can Panic?: yes
         fn _use_card(ref self: ContractState, caller: @ContractAddress, card: EnumCard) -> () {
             let mut world = self.world_default();
             let mut hand: ComponentHand = world.read_model(*caller);

@@ -36,6 +36,16 @@ mod player_system {
 
     #[abi(embed_v0)]
     impl PlayerSystemImpl of super::IPlayerSystem<ContractState> {
+        /// Allows a player to join the table deployed, as long as the game hasn't started/ended yet.
+        ///
+        /// Inputs:
+        /// *world*: The mutable reference of the world to write components to.
+        /// *username*: The user-selected displayed name identifyinh the current player's name.
+        /// Note that the current implementation allows for multiple users to have the same username.
+        ///
+        /// Output:
+        /// None.
+        /// Can Panic?: yes
         fn join(ref self: ContractState, username: ByteArray) -> () {
             let mut world = self.world_default();
             let mut game: ComponentGame = world.read_model(world.dispatcher.contract_address);
@@ -49,6 +59,18 @@ mod player_system {
             world.write_model(@player);
         }
 
+        /// Adds two new cards from the dealer's deck to the active caller's hand, during their turn.
+        /// This can only happen once per turn, at the beginning of it (first move).
+        ///
+        /// Inputs:
+        /// *world*: The mutable reference of the world to write components to.
+        /// *draws_five*: Flag indicating if the active caller can draw five cards from the deck
+        /// instead of the typical two. This behavior can only happend if the player has no more
+        /// cards left in their hand at the end of their last turn.
+        ///
+        /// Output:
+        /// None.
+        /// Can Panic?: yes
         fn draw(ref self: ContractState, draws_five: bool) -> () {
             let mut world = self.world_default();
             let caller = get_caller_address();
@@ -87,6 +109,14 @@ mod player_system {
             world.write_model(@player);
         }
 
+        /// Make the caller's player leave the table and surrender all cards to the discard pile.
+        ///
+        /// Inputs:
+        /// *world*: The mutable reference of the world to write components to.
+        ///
+        /// Output:
+        /// None.
+        /// Can Panic?: yes
         fn leave(ref self: ContractState) -> () {
             let mut world = self.world_default();
             let mut game: ComponentGame = world.read_model(world.dispatcher.contract_address);
@@ -104,8 +134,9 @@ mod player_system {
 
     #[generate_trait]
     impl InternalImpl of InternalTrait {
+        // Retrieve the dojo world storage for the zktt namespace.
         fn world_default(self: @ContractState) -> dojo::world::WorldStorage {
-            self.world(@"zktt")
+            return self.world(@"zktt");
         }
     }
 }
