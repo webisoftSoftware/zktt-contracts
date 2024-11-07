@@ -10,7 +10,7 @@
 // TODO: Add comments to each component
 
 use starknet::ContractAddress;
-use super::enums::{EnumCard, EnumGameState};
+use zktt::models::enums::{EnumCard, EnumGameState};
 
 #[derive(Drop, Serde, Clone, Debug)]
 #[dojo::model]

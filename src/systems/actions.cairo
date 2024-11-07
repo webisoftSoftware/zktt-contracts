@@ -10,14 +10,6 @@
 // TODO: COMMENTS OR ADD INITIAL PSEUDOCODE PLEASE
 // TODO: Fix MajorityAttack references Nami
 
-use starknet::ContractAddress;
-use dojo::world::IWorldDispatcher;
-use zktt::models::components{
-    EnumCard, EnumGameState, ComponentGame, ComponentHand, ComponentDeck, 
-    ComponentDeposit, ComponentPlayer
-};
-use zktt::models::enums::{EnumMoveError, EnumPlayerTarget, EnumGasFeeType};
-
 #[starknet::interface]
 trait IActionSystem<T> {
     fn play(ref self: T, card: EnumCard) -> ();
@@ -27,7 +19,13 @@ trait IActionSystem<T> {
 
 #[dojo::contract]
 mod action_system {
-    use super::*;
+    use starknet::ContractAddress;
+    use dojo::world::IWorldDispatcher;
+    use zktt::models::components::{
+        ComponentGame, ComponentHand, ComponentDeck, 
+        ComponentDeposit, ComponentPlayer
+    };
+    use zktt::models::enums::{EnumCard, EnumGameState};
     use starknet::get_caller_address;
     use dojo::model::ModelStorage;
 

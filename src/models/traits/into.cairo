@@ -7,6 +7,15 @@
 ////////////////////////////////                                    ////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+use core::fmt::{Display, Formatter, Error};
+use zktt::models::components::{ComponentDeck, ComponentHand, ComponentPlayer};
+use zktt::models::enums::{EnumCard, EnumBlockchainType, EnumGasFeeType, EnumMoveError};
+use zktt::models::structs::{
+    ActionChainReorg, ActionClaimYield, ActionFrontrun, ActionHardFork, ActionMEVBoost,
+    ActionPriorityFee, ActionReplayAttack, ActionSoftFork, ActionGasFee, ActionMajorityAttack,
+    StructAsset, StructBlockchain
+};
+
 // TODO: Remove MEVBoost and fix MajorityAttack so it says FiftyOnePercentAttack
 
 impl EnumCardInto of Into<@EnumCard, ByteArray> {

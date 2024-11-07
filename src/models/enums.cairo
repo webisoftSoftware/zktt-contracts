@@ -7,6 +7,12 @@
 ////////////////////////////////                                    ////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+use starknet::ContractAddress;
+use zktt::models::structs::{
+    ActionChainReorg, ActionClaimYield, ActionFrontrun, ActionHardFork, ActionMEVBoost,
+    ActionPriorityFee, ActionReplayAttack, ActionSoftFork, ActionGasFee, ActionMajorityAttack,
+    StructAsset, StructBlockchain
+};
 // TODO: Add comments to each component
 // TODO: Remove MEVBoost and change names per C designs
 

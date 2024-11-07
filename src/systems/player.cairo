@@ -7,10 +7,6 @@
 ////////////////////////////////                                    ////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-use starknet::ContractAddress;
-use zktt::models::components::{ComponentPlayer, ComponentHand, ComponentDealer, ComponentGame, EnumGameState, EnumCard};
-use dojo::world::IWorldDispatcher;
-
 #[starknet::interface]
 trait IPlayerSystem<T> {
     fn join(ref self: T, username: ByteArray) -> ();
@@ -20,7 +16,11 @@ trait IPlayerSystem<T> {
 
 #[dojo::contract]
 mod player_system {
-    use super::*;
+    use starknet::ContractAddress;
+    use zktt::models::components::{ComponentPlayer, ComponentHand, ComponentDealer, ComponentGame, ComponentDeposit};
+    use zktt::models::enums::{EnumGameState, EnumCard};
+    use zktt::models::traits::game::{IGame, IPlayer, IHand, IDealer};
+    use dojo::world::IWorldDispatcher;
     use starknet::get_caller_address;
     use dojo::model::ModelStorage;
 

@@ -7,9 +7,20 @@
 ////////////////////////////////                                    ////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+use core::fmt::{Display, Formatter, Error};
+use zktt::models::components::{ComponentDeck, ComponentHand, ComponentPlayer};
+use zktt::models::enums::{EnumCard, EnumBlockchainType, EnumGasFeeType, EnumMoveError};
+use zktt::models::structs::{
+    ActionChainReorg, ActionClaimYield, ActionFrontrun, ActionHardFork, ActionMEVBoost,
+    ActionPriorityFee, ActionReplayAttack, ActionSoftFork, ActionGasFee, ActionMajorityAttack,
+    StructAsset, StructBlockchain
+};
+
 impl ComponentDeckDisplay of Display<ComponentDeck> {
     fn fmt(self: @ComponentDeck, ref f: Formatter) -> Result<(), Error> {
-        let str: ByteArray = format!("{0}'s Deck:", starknet::contract_address_to_felt252(*self.m_ent_owner));
+        let str: ByteArray = format!(
+            "{0}'s Deck:", starknet::contract_address_to_felt252(*self.m_ent_owner)
+        );
         f.buffer.append(@str);
 
         let mut index: usize = 0;
@@ -25,7 +36,9 @@ impl ComponentDeckDisplay of Display<ComponentDeck> {
 
 impl ComponentHandDisplay of Display<ComponentHand> {
     fn fmt(self: @ComponentHand, ref f: Formatter) -> Result<(), Error> {
-        let str: ByteArray = format!("{0}'s Hand:", starknet::contract_address_to_felt252(*self.m_ent_owner));
+        let str: ByteArray = format!(
+            "{0}'s Hand:", starknet::contract_address_to_felt252(*self.m_ent_owner)
+        );
         f.buffer.append(@str);
 
         let mut index: usize = 0;
@@ -41,9 +54,14 @@ impl ComponentHandDisplay of Display<ComponentHand> {
 
 impl ComponentPlayerDisplay of Display<ComponentPlayer> {
     fn fmt(self: @ComponentPlayer, ref f: Formatter) -> Result<(), Error> {
-        let str: ByteArray = format!("Owner: {0}, Player: {1}, Asset Groups Owned: {2}, Moves remaining: {3}, Score: {4}",
-         starknet::contract_address_to_felt252(*self.m_ent_owner), self.m_username, *self.m_sets,
-          *self.m_moves_remaining, *self.m_score);
+        let str: ByteArray = format!(
+            "Owner: {0}, Player: {1}, Asset Groups Owned: {2}, Moves remaining: {3}, Score: {4}",
+            starknet::contract_address_to_felt252(*self.m_ent_owner),
+            self.m_username,
+            *self.m_sets,
+            *self.m_moves_remaining,
+            *self.m_score
+        );
         f.buffer.append(@str);
         return Result::Ok(());
     }
@@ -51,8 +69,9 @@ impl ComponentPlayerDisplay of Display<ComponentPlayer> {
 
 impl StructAssetDisplay of Display<StructAsset> {
     fn fmt(self: @StructAsset, ref f: Formatter) -> Result<(), Error> {
-        let str: ByteArray = format!("Asset: {0}, Value: {1}, Index: {2}",
-         self.m_name, *self.m_value, *self.m_index);
+        let str: ByteArray = format!(
+            "Asset: {0}, Value: {1}, Index: {2}", self.m_name, *self.m_value, *self.m_index
+        );
         f.buffer.append(@str);
         return Result::Ok(());
     }
@@ -60,8 +79,13 @@ impl StructAssetDisplay of Display<StructAsset> {
 
 impl StructBlockchainDisplay of Display<StructBlockchain> {
     fn fmt(self: @StructBlockchain, ref f: Formatter) -> Result<(), Error> {
-        let str: ByteArray = format!("Blockchain: {0}, Type: {1}, Fee: {2}, Value {3}",
-         self.m_name, self.m_bc_type, *self.m_fee, *self.m_value);
+        let str: ByteArray = format!(
+            "Blockchain: {0}, Type: {1}, Fee: {2}, Value {3}",
+            self.m_name,
+            self.m_bc_type,
+            *self.m_fee,
+            *self.m_value
+        );
         f.buffer.append(@str);
         return Result::Ok(());
     }
@@ -71,8 +95,9 @@ impl StructBlockchainDisplay of Display<StructBlockchain> {
 
 impl ActionChainReorgDisplay of Display<ActionChainReorg> {
     fn fmt(self: @ActionChainReorg, ref f: Formatter) -> Result<(), Error> {
-        let str: ByteArray = format!("Chain Reorg: Value {0}, Index {1}", *self.m_value,
-        *self.m_index);
+        let str: ByteArray = format!(
+            "Chain Reorg: Value {0}, Index {1}", *self.m_value, *self.m_index
+        );
         f.buffer.append(@str);
         return Result::Ok(());
     }
@@ -80,8 +105,9 @@ impl ActionChainReorgDisplay of Display<ActionChainReorg> {
 
 impl ActionClaimYieldDisplay of Display<ActionClaimYield> {
     fn fmt(self: @ActionClaimYield, ref f: Formatter) -> Result<(), Error> {
-        let str: ByteArray = format!("Claim Yield: Value {0}, Index {1}", *self.m_value,
-        *self.m_index);
+        let str: ByteArray = format!(
+            "Claim Yield: Value {0}, Index {1}", *self.m_value, *self.m_index
+        );
         f.buffer.append(@str);
         return Result::Ok(());
     }
@@ -89,8 +115,13 @@ impl ActionClaimYieldDisplay of Display<ActionClaimYield> {
 
 impl ActionFrontrunDisplay of Display<ActionFrontrun> {
     fn fmt(self: @ActionFrontrun, ref f: Formatter) -> Result<(), Error> {
-        let str: ByteArray = format!("Steal Blockchain: Blockchain: {0},
-        Value {1}, Index: {2}", self.m_blockchain_name, *self.m_value, *self.m_index);
+        let str: ByteArray = format!(
+            "Steal Blockchain: Blockchain: {0},
+        Value {1}, Index: {2}",
+            self.m_blockchain_name,
+            *self.m_value,
+            *self.m_index
+        );
         f.buffer.append(@str);
         return Result::Ok(());
     }
@@ -98,8 +129,7 @@ impl ActionFrontrunDisplay of Display<ActionFrontrun> {
 
 impl ActionHardForkDisplay of Display<ActionHardFork> {
     fn fmt(self: @ActionHardFork, ref f: Formatter) -> Result<(), Error> {
-        let str: ByteArray = format!("Deny: Value {0}, Index {1}", *self.m_value,
-        *self.m_index);
+        let str: ByteArray = format!("Deny: Value {0}, Index {1}", *self.m_value, *self.m_index);
         f.buffer.append(@str);
         return Result::Ok(());
     }
@@ -107,8 +137,9 @@ impl ActionHardForkDisplay of Display<ActionHardFork> {
 
 impl ActionMEVBoostDisplay of Display<ActionMEVBoost> {
     fn fmt(self: @ActionMEVBoost, ref f: Formatter) -> Result<(), Error> {
-        let str: ByteArray = format!("MEV Boost: Value {0}, Index {1}", *self.m_value,
-        *self.m_index);
+        let str: ByteArray = format!(
+            "MEV Boost: Value {0}, Index {1}", *self.m_value, *self.m_index
+        );
         f.buffer.append(@str);
         return Result::Ok(());
     }
@@ -116,8 +147,9 @@ impl ActionMEVBoostDisplay of Display<ActionMEVBoost> {
 
 impl ActionPriorityFeeDisplay of Display<ActionPriorityFee> {
     fn fmt(self: @ActionPriorityFee, ref f: Formatter) -> Result<(), Error> {
-        let str: ByteArray = format!("Draw Two Cards: Value {0}, Index {1}",
-         *self.m_value, *self.m_index);
+        let str: ByteArray = format!(
+            "Draw Two Cards: Value {0}, Index {1}", *self.m_value, *self.m_index
+        );
         f.buffer.append(@str);
         return Result::Ok(());
     }
@@ -125,8 +157,9 @@ impl ActionPriorityFeeDisplay of Display<ActionPriorityFee> {
 
 impl ActionReplayAttackDisplay of Display<ActionReplayAttack> {
     fn fmt(self: @ActionReplayAttack, ref f: Formatter) -> Result<(), Error> {
-        let str: ByteArray = format!("Replay Attack: Value {0}, Index {1}", *self.m_value,
-        *self.m_index);
+        let str: ByteArray = format!(
+            "Replay Attack: Value {0}, Index {1}", *self.m_value, *self.m_index
+        );
         f.buffer.append(@str);
         return Result::Ok(());
     }
@@ -134,8 +167,9 @@ impl ActionReplayAttackDisplay of Display<ActionReplayAttack> {
 
 impl ActionSoftForkDisplay of Display<ActionSoftFork> {
     fn fmt(self: @ActionSoftFork, ref f: Formatter) -> Result<(), Error> {
-        let str: ByteArray = format!("Soft Fork: Value {0}, Index {1}", *self.m_value,
-        *self.m_index);
+        let str: ByteArray = format!(
+            "Soft Fork: Value {0}, Index {1}", *self.m_value, *self.m_index
+        );
         f.buffer.append(@str);
         return Result::Ok(());
     }
@@ -237,7 +271,9 @@ impl EnumGasFeeTypeDisplay of Display<EnumGasFeeType> {
                 let str: ByteArray = format!("Against One: {0}", color);
                 f.buffer.append(@str);
             },
-            EnumGasFeeType::AgainstTwo((color1, color2)) => {
+            EnumGasFeeType::AgainstTwo((
+                color1, color2
+            )) => {
                 let str: ByteArray = format!("Against Two: {0}, {1}", color1, color2);
                 f.buffer.append(@str);
             }
@@ -273,8 +309,12 @@ impl EnumMoveErrorDisplay of Display<EnumMoveError> {
 
 impl ActionGasFeeDisplay of Display<ActionGasFee> {
     fn fmt(self: @ActionGasFee, ref f: Formatter) -> Result<(), Error> {
-        let str: ByteArray = format!("Gas Fee: Targeted Blockchain: {0}, Value {1}, Index {2}",
-        self.m_blockchain_type_affected, *self.m_value, *self.m_index);
+        let str: ByteArray = format!(
+            "Gas Fee: Targeted Blockchain: {0}, Value {1}, Index {2}",
+            self.m_blockchain_type_affected,
+            *self.m_value,
+            *self.m_index
+        );
         f.buffer.append(@str);
         return Result::Ok(());
     }

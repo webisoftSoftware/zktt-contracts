@@ -7,6 +7,10 @@
 ////////////////////////////////                                    ////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+use starknet::ContractAddress;
+use zktt::models::enums::{EnumCard, EnumBlockchainType, EnumGasFeeType, EnumMoveError, EnumPlayerTarget};
+
+
 // TODO: Add comments to each component
 
 #[derive(Drop, Serde, Clone, Introspect, PartialEq, Debug)]

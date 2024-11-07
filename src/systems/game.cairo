@@ -9,10 +9,6 @@
 
 // TODO: Add comments to each component
 
-use zktt::models::components::{EnumCard, EnumGameState, ComponentGame, ComponentDealer, ComponentPlayer};
-use starknet::ContractAddress;
-use dojo::world::IWorldDispatcher;
-
 #[starknet::interface]
 trait IGameSystem<T> {
     fn start(ref self: T) -> ();
@@ -21,7 +17,10 @@ trait IGameSystem<T> {
 
 #[dojo::contract]
 mod game_system {
-    use super::*;
+    use zktt::models::components::{ComponentGame, ComponentDealer, ComponentPlayer};
+    use zktt::models::enums::{EnumCard, EnumGameState};
+    use starknet::ContractAddress;
+    use dojo::world::IWorldDispatcher;
     use starknet::{get_block_timestamp, get_tx_info, get_caller_address};
     use core::poseidon::poseidon_hash_span;
     use dojo::model::ModelStorage;

@@ -7,56 +7,49 @@
 ////////////////////////////////                                    ////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+use core::fmt::{Display, Formatter, Error};
+use zktt::models::components::{ComponentDeck, ComponentHand, ComponentPlayer};
+use zktt::models::enums::{EnumCard, EnumBlockchainType, EnumGasFeeType, EnumMoveError};
+use zktt::models::structs::{
+    ActionChainReorg, ActionClaimYield, ActionFrontrun, ActionHardFork, ActionMEVBoost,
+    ActionPriorityFee, ActionReplayAttack, ActionSoftFork, ActionGasFee, ActionMajorityAttack,
+    StructAsset, StructBlockchain
+};
+
 #[generate_trait]
 impl StructAssetImpl of IAsset {
     fn new(name: ByteArray, value: u8, copies_left: u8) -> StructAsset nopanic {
-        return StructAsset {
-            m_name: name,
-            m_value: value,
-            m_index: copies_left
-        };
+        return StructAsset { m_name: name, m_value: value, m_index: copies_left };
     }
 }
 
 #[generate_trait]
 impl StructAssetGroupImpl of IAssetGroup {
     fn new(blockchains: Array<StructBlockchain>, total_fee_value: u8) -> StructAssetGroup nopanic {
-        return StructAssetGroup {
-            m_set: blockchains,
-            m_total_fee_value: total_fee_value
-        };
+        return StructAssetGroup { m_set: blockchains, m_total_fee_value: total_fee_value };
     }
 }
 
 #[generate_trait]
 impl StructBlockchainImpl of IBlockchain {
-    fn new(name: ByteArray, bc_type: EnumBlockchainType, fee: u8, value: u8) -> StructBlockchain nopanic {
-        return StructBlockchain {
-            m_name: name,
-            m_bc_type: bc_type,
-            m_fee: fee,
-            m_value: value
-        };
+    fn new(
+        name: ByteArray, bc_type: EnumBlockchainType, fee: u8, value: u8
+    ) -> StructBlockchain nopanic {
+        return StructBlockchain { m_name: name, m_bc_type: bc_type, m_fee: fee, m_value: value };
     }
 }
 
 #[generate_trait]
 impl StructPriorityFeeImpl of IDraw {
     fn new(value: u8, copies_left: u8) -> ActionPriorityFee nopanic {
-        return ActionPriorityFee {
-            m_value: value,
-            m_index: copies_left
-        };
+        return ActionPriorityFee { m_value: value, m_index: copies_left };
     }
 }
 
 #[generate_trait]
 impl DealerImpl of IDealer {
     fn new(owner: ContractAddress, cards: Array<EnumCard>) -> ComponentDealer nopanic {
-        return ComponentDealer {
-            m_ent_owner: owner,
-            m_cards: cards
-        };
+        return ComponentDealer { m_ent_owner: owner, m_cards: cards };
     }
 
     fn shuffle(ref self: ComponentDealer, seed: felt252) -> () {
@@ -109,7 +102,7 @@ impl DeckImpl of IDeck {
         return found;
     }
 
-    fn contains_type(self: @ComponentDeck, bc_type : @EnumBlockchainType) -> Option<usize> {
+    fn contains_type(self: @ComponentDeck, bc_type: @EnumBlockchainType) -> Option<usize> {
         let mut index = 0;
         let mut found = Option::None;
 
@@ -144,7 +137,9 @@ impl DeckImpl of IDeck {
         }
     }
 
-    fn get_asset_group_for(self: @ComponentDeck, bc: @StructBlockchain) -> Option<Array<StructBlockchain>> {
+    fn get_asset_group_for(
+        self: @ComponentDeck, bc: @StructBlockchain
+    ) -> Option<Array<StructBlockchain>> {
         let mut index: usize = 0;
         let mut asset_group_array: Array<StructBlockchain> = ArrayTrait::new();
         let mut asset_group: Option<Array<StructBlockchain>> = Option::None;
@@ -153,7 +148,7 @@ impl DeckImpl of IDeck {
         while let Option::Some(card) = self.m_cards.get(index) {
             match card.unbox() {
                 EnumCard::Blockchain(bc_struct) => {
-                    if bc_struct.m_bc_type == bc.m_bc_type{
+                    if bc_struct.m_bc_type == bc.m_bc_type {
                         total_fee += *bc.m_fee;
                         asset_group_array.append(bc.clone());
                     }
@@ -170,11 +165,15 @@ impl DeckImpl of IDeck {
         return asset_group;
     }
 
-    fn check_complete_set(self: @ComponentDeck, asset_group_array: Span<StructBlockchain>,
-            bc_type: @EnumBlockchainType) -> bool {
+    fn check_complete_set(
+        self: @ComponentDeck,
+        asset_group_array: Span<StructBlockchain>,
+        bc_type: @EnumBlockchainType
+    ) -> bool {
         return match bc_type {
             EnumBlockchainType::Immutable(_) => { return false; },
-            EnumBlockchainType::Blue(_) | EnumBlockchainType::DarkBlue(_) | EnumBlockchainType::Gold(_) => {
+            EnumBlockchainType::Blue(_) | EnumBlockchainType::DarkBlue(_) |
+            EnumBlockchainType::Gold(_) => {
                 if asset_group_array.len() == 2 {
                     return true;
                 }
@@ -200,39 +199,17 @@ impl DeckImpl of IDeck {
 impl EnumBlockchainTypeImpl of IEnumBlockchainType {
     fn get_boost_array(self: @EnumBlockchainType) -> Array<u8> {
         return match self {
-            EnumBlockchainType::Immutable => {
-                return array![];
-            },
-            EnumBlockchainType::Blue => {
-                return array![1, 2];
-            },
-            EnumBlockchainType::DarkBlue => {
-                return array![3, 8];
-            },
-            EnumBlockchainType::Gold => {
-                return array![1, 2];
-            },
-            EnumBlockchainType::Green => {
-                return array![1, 3, 5];
-            },
-            EnumBlockchainType::Grey => {
-                return array![1, 2, 4];
-            },
-            EnumBlockchainType::LightBlue => {
-                return array![1, 2, 3, 4];
-            },
-            EnumBlockchainType::Pink => {
-                return array![1, 2, 3];
-            },
-            EnumBlockchainType::Purple => {
-                return array![2, 4, 6];
-            },
-            EnumBlockchainType::Red => {
-                return array![2, 4, 7];
-            },
-            EnumBlockchainType::Yellow => {
-                return array![2, 3, 6];
-            },
+            EnumBlockchainType::Immutable => { return array![]; },
+            EnumBlockchainType::Blue => { return array![1, 2]; },
+            EnumBlockchainType::DarkBlue => { return array![3, 8]; },
+            EnumBlockchainType::Gold => { return array![1, 2]; },
+            EnumBlockchainType::Green => { return array![1, 3, 5]; },
+            EnumBlockchainType::Grey => { return array![1, 2, 4]; },
+            EnumBlockchainType::LightBlue => { return array![1, 2, 3, 4]; },
+            EnumBlockchainType::Pink => { return array![1, 2, 3]; },
+            EnumBlockchainType::Purple => { return array![2, 4, 6]; },
+            EnumBlockchainType::Red => { return array![2, 4, 7]; },
+            EnumBlockchainType::Yellow => { return array![2, 3, 6]; },
         };
     }
 }
@@ -251,42 +228,18 @@ impl EnumCardImpl of IEnumCard {
 
     fn get_index(self: @EnumCard) -> u8 {
         return match self {
-            EnumCard::Asset(data) => {
-                return *data.m_index;
-            },
-            EnumCard::Blockchain(_data) => {
-                return 1;
-            },
-            EnumCard::ChainReorg(data) => {
-                return *data.m_index;
-            },
-            EnumCard::ClaimYield(data) => {
-                return *data.m_index;
-            },
-            EnumCard::GasFee(data) => {
-                return *data.m_index;
-            },
-            EnumCard::HardFork(data) => {
-                return *data.m_index;
-            },
-            EnumCard::MEVBoost(data) => {
-                return *data.m_index;
-            },
-            EnumCard::PriorityFee(data) => {
-                return *data.m_index;
-            },
-            EnumCard::ReplayAttack(data) => {
-                return *data.m_index;
-            },
-            EnumCard::SoftFork(data) => {
-                return *data.m_index;
-            },
-            EnumCard::FrontRun(data) => {
-                return *data.m_index;
-            },
-            EnumCard::MajorityAttack(_) => {
-                return 0;
-            }
+            EnumCard::Asset(data) => { return *data.m_index; },
+            EnumCard::Blockchain(_data) => { return 1; },
+            EnumCard::ChainReorg(data) => { return *data.m_index; },
+            EnumCard::ClaimYield(data) => { return *data.m_index; },
+            EnumCard::GasFee(data) => { return *data.m_index; },
+            EnumCard::HardFork(data) => { return *data.m_index; },
+            EnumCard::MEVBoost(data) => { return *data.m_index; },
+            EnumCard::PriorityFee(data) => { return *data.m_index; },
+            EnumCard::ReplayAttack(data) => { return *data.m_index; },
+            EnumCard::SoftFork(data) => { return *data.m_index; },
+            EnumCard::FrontRun(data) => { return *data.m_index; },
+            EnumCard::MajorityAttack(_) => { return 0; }
         };
     }
 
@@ -299,42 +252,18 @@ impl EnumCardImpl of IEnumCard {
 
     fn get_value(self: @EnumCard) -> u8 {
         return match self {
-            EnumCard::Asset(data) => {
-                return *data.m_value;
-            },
-            EnumCard::Blockchain(data) => {
-                return *data.m_value;
-            },
-            EnumCard::ChainReorg(data) => {
-                return *data.m_value;
-            },
-            EnumCard::ClaimYield(data) => {
-                return *data.m_value;
-            },
-            EnumCard::GasFee(data) => {
-                return *data.m_value;
-            },
-            EnumCard::HardFork(data) => {
-                return *data.m_value;
-            },
-            EnumCard::MEVBoost(data) => {
-                return *data.m_value;
-            },
-            EnumCard::PriorityFee(data) => {
-                return *data.m_value;
-            },
-            EnumCard::ReplayAttack(data) => {
-                return *data.m_value;
-            },
-            EnumCard::SoftFork(data) => {
-                return *data.m_value;
-            },
-            EnumCard::FrontRun(data) => {
-                return *data.m_value;
-            },
-            EnumCard::MajorityAttack(data) => {
-                return *data.m_value;
-            }
+            EnumCard::Asset(data) => { return *data.m_value; },
+            EnumCard::Blockchain(data) => { return *data.m_value; },
+            EnumCard::ChainReorg(data) => { return *data.m_value; },
+            EnumCard::ClaimYield(data) => { return *data.m_value; },
+            EnumCard::GasFee(data) => { return *data.m_value; },
+            EnumCard::HardFork(data) => { return *data.m_value; },
+            EnumCard::MEVBoost(data) => { return *data.m_value; },
+            EnumCard::PriorityFee(data) => { return *data.m_value; },
+            EnumCard::ReplayAttack(data) => { return *data.m_value; },
+            EnumCard::SoftFork(data) => { return *data.m_value; },
+            EnumCard::FrontRun(data) => { return *data.m_value; },
+            EnumCard::MajorityAttack(data) => { return *data.m_value; }
         };
     }
 
@@ -474,8 +403,13 @@ impl GameImpl of IGame {
 
 #[generate_trait]
 impl GasFeeImpl of IGasFee {
-    fn new(players_affected: EnumPlayerTarget, bc_affected: EnumGasFeeType,
-        set_applied: Array<StructBlockchain>, value: u8, copies_left: u8) -> ActionGasFee nopanic {
+    fn new(
+        players_affected: EnumPlayerTarget,
+        bc_affected: EnumGasFeeType,
+        set_applied: Array<StructBlockchain>,
+        value: u8,
+        copies_left: u8
+    ) -> ActionGasFee nopanic {
         return ActionGasFee {
             m_players_affected: players_affected,
             m_set_applied: set_applied,
@@ -494,10 +428,7 @@ impl GasFeeImpl of IGasFee {
 #[generate_trait]
 impl HandImpl of IHand {
     fn new(owner: ContractAddress, cards: Array<EnumCard>) -> ComponentHand {
-        return ComponentHand {
-            m_ent_owner: owner,
-            m_cards: cards
-        };
+        return ComponentHand { m_ent_owner: owner, m_cards: cards };
     }
 
     fn add(ref self: ComponentHand, mut card: EnumCard) -> () {
@@ -542,11 +473,7 @@ impl HandImpl of IHand {
 #[generate_trait]
 impl DepositImpl of IDeposit {
     fn new(owner: ContractAddress, cards: Array<EnumCard>, value: u8) -> ComponentDeposit {
-        return ComponentDeposit {
-            m_ent_owner: owner,
-            m_cards: cards,
-            m_total_value: value
-        };
+        return ComponentDeposit { m_ent_owner: owner, m_cards: cards, m_total_value: value };
     }
 
     fn add(ref self: ComponentDeposit, mut card: EnumCard) -> () {
