@@ -303,7 +303,6 @@ mod game_system {
                 ),
                 // EnumCard::ReplayAttack(IReplayAttack::new(1, 2)),
             // EnumCard::ChainReorg(IChainReorg::new(3, 3)),
-            // EnumCard::HardFork(IHardFork::new(3, 3)),
             ];
 
             return cards_in_order;

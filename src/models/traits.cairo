@@ -136,16 +136,6 @@ impl ActionFrontrunDisplay of Display<ActionFrontrun> {
     }
 }
 
-/*
-impl ActionHardForkDisplay of Display<ActionHardFork> {
-    fn fmt(self: @ActionHardFork, ref f: Formatter) -> Result<(), Error> {
-        let str: ByteArray = format!("Deny: Value {0}, Index {1}", *self.m_value, *self.m_index);
-        f.buffer.append(@str);
-        return Result::Ok(());
-    }
-}
-*/
-
 impl ActionPriorityFeeDisplay of Display<ActionPriorityFee> {
     fn fmt(self: @ActionPriorityFee, ref f: Formatter) -> Result<(), Error> {
         let str: ByteArray = format!(
@@ -181,12 +171,6 @@ impl EnumCardDisplay of Display<EnumCard> {
                 let str: ByteArray = format!("{data}");
                 f.buffer.append(@str);
             },
-            /*
-            EnumCard::HardFork(data) => {
-                let str: ByteArray = format!("{data}");
-                f.buffer.append(@str);
-            },
-            */
             EnumCard::PriorityFee(data) => {
                 let str: ByteArray = format!("{data}");
                 f.buffer.append(@str);
@@ -338,7 +322,6 @@ impl EnumCardInto of Into<@EnumCard, ByteArray> {
             EnumCard::ChainReorg(_) => "Chain Reorg",
             EnumCard::ClaimYield(_) => "Claim Yield",
             EnumCard::GasFee(_) => "Gas Fee",
-            // EnumCard::HardFork(_) => "Hardfork",
             EnumCard::PriorityFee(_) => "Priority Fee",
             EnumCard::ReplayAttack(_) => "Replay Attack",
             EnumCard::FrontRun(_) => "Frontrun",
@@ -569,7 +552,6 @@ impl EnumCardImpl of IEnumCard {
             EnumCard::ChainReorg(data) => { return *data.m_index; },
             EnumCard::ClaimYield(data) => { return *data.m_index; },
             EnumCard::GasFee(data) => { return *data.m_index; },
-            // EnumCard::HardFork(data) => { return *data.m_index; },
             EnumCard::PriorityFee(data) => { return *data.m_index; },
             EnumCard::ReplayAttack(data) => { return *data.m_index; },
             EnumCard::FrontRun(data) => { return *data.m_index; },
@@ -588,7 +570,6 @@ impl EnumCardImpl of IEnumCard {
             EnumCard::ChainReorg(data) => { return *data.m_value; },
             EnumCard::ClaimYield(data) => { return *data.m_value; },
             EnumCard::GasFee(data) => { return *data.m_value; },
-            // EnumCard::HardFork(data) => { return *data.m_value; },
             EnumCard::PriorityFee(data) => { return *data.m_value; },
             EnumCard::ReplayAttack(data) => { return *data.m_value; },
             EnumCard::FrontRun(data) => { return *data.m_value; },
@@ -618,13 +599,6 @@ impl EnumCardImpl of IEnumCard {
                 data.m_index -= 1;
                 return EnumCard::GasFee(data);
             },
-            /*
-            EnumCard::HardFork(mut data) => {
-                assert!(data.m_index > 0, "No more indices left for {0}", data);
-                data.m_index -= 1;
-                return EnumCard::HardFork(data);
-            },
-            */
             EnumCard::PriorityFee(mut data) => {
                 assert!(data.m_index > 0, "No more indices left for {0}", data);
                 data.m_index -= 1;

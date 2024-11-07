@@ -27,7 +27,6 @@ pub enum EnumCard {
     ChainReorg: ActionChainReorg,
     ClaimYield: ActionClaimYield,
     GasFee: ActionGasFee,
-    // HardFork: ActionHardFork,
     PriorityFee: ActionPriorityFee,
     ReplayAttack: ActionReplayAttack,
     FrontRun: ActionFrontrun,

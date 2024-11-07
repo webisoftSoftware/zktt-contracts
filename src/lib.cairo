@@ -19,3 +19,15 @@ mod systems {
     mod game;
     mod player;
 }
+
+#[cfg(test)]  // Only compile when testing (sozo test).
+mod tests {
+    mod utils;
+    mod integration {
+        mod test_game;
+        mod test_actions;
+        mod test_player;
+    }
+    mod unit {
+    }
+}
