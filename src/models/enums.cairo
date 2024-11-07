@@ -7,23 +7,18 @@
 ////////////////////////////////                                    ////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// TODO: Add comments to each component
-// TODO: Remove MEVBoost and change names per C designs
-
 #[derive(Drop, Serde, Clone, PartialEq, Introspect, Debug)]
 pub enum EnumCard {
     Asset: StructAsset,
     Blockchain: StructBlockchain,
-    ChainReorg: ActionChainReorg,
     ClaimYield: ActionClaimYield,
     GasFee: ActionGasFee,
-    HardFork: ActionHardFork,
-    MEVBoost: ActionMEVBoost,
+    Hardfork: ActionHardfork,
     PriorityFee: ActionPriorityFee,
-    SoftFork: ActionSoftFork,
+    ChainReorg: ActionChainReorg,
     ReplayAttack: ActionReplayAttack,
     FrontRun: ActionFrontrun,
-    MajorityAttack: ActionMajorityAttack
+    FiftyOnePercentAttack: ActionFiftyOnePercentAttack
 }
 
 #[derive(Drop, Copy, Serde, PartialEq, Introspect, Debug)]
@@ -53,11 +48,8 @@ pub enum EnumGasFeeType {
     AgainstTwo: (EnumBlockchainType, EnumBlockchainType),
 }
 
-// TODO: Remove Immutable from enum
-
 #[derive(Drop, Serde, Copy, PartialEq, Introspect, Debug)]
 pub enum EnumBlockchainType {
-    Immutable,
     Blue,
     DarkBlue,
     Gold,

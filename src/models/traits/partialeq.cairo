@@ -69,8 +69,8 @@ impl ActionGasFeeEq of PartialEq<ActionGasFee> {
     }
 }
 
-impl ActionMajorityAttackEq of PartialEq<ActionMajorityAttack> {
-    fn eq(lhs: @ActionMajorityAttack, rhs: @ActionMajorityAttack) -> bool {
+impl ActionFiftyOnePercentAttackEq of PartialEq<ActionFiftyOnePercentAttack> {
+    fn eq(lhs: @ActionFiftyOnePercentAttack, rhs: @ActionFiftyOnePercentAttack) -> bool {
         let mut index: usize = 0;
         return loop {
             if index >= lhs.m_set.len() {

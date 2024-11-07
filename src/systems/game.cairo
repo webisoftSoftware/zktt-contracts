@@ -7,8 +7,6 @@
 ////////////////////////////////                                    ////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// TODO: Add comments to each component
-
 use zktt::models::components::{EnumCard, EnumGameState, ComponentGame, ComponentDealer, ComponentPlayer};
 use starknet::ContractAddress;
 use dojo::world::IWorldDispatcher;

@@ -7,8 +7,6 @@
 ////////////////////////////////                                    ////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// TODO: Remove MEVBoost and fix MajorityAttack so it says FiftyOnePercentAttack
-
 impl EnumCardInto of Into<@EnumCard, ByteArray> {
     fn into(self: @EnumCard) -> ByteArray {
         return match self {
@@ -18,12 +16,10 @@ impl EnumCardInto of Into<@EnumCard, ByteArray> {
             EnumCard::ClaimYield(_) => "Claim Yield",
             EnumCard::GasFee(_) => "Gas Fee",
             EnumCard::HardFork(_) => "Hardfork",
-            EnumCard::MEVBoost(_) => "MEV Boost",
             EnumCard::PriorityFee(_) => "Priority Fee",
             EnumCard::ReplayAttack(_) => "Replay Attack",
-            EnumCard::SoftFork(_) => "Soft Fork",
             EnumCard::FrontRun(_) => "Frontrun",
-            EnumCard::MajorityAttack(_) => "51% Attack",
+            EnumCard::FiftyOnePercentAttack(_) => "51% Attack",
         };
     }
 }

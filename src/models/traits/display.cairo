@@ -67,8 +67,6 @@ impl StructBlockchainDisplay of Display<StructBlockchain> {
     }
 }
 
-// TODO: Change name of component
-
 impl ActionChainReorgDisplay of Display<ActionChainReorg> {
     fn fmt(self: @ActionChainReorg, ref f: Formatter) -> Result<(), Error> {
         let str: ByteArray = format!("Chain Reorg: Value {0}, Index {1}", *self.m_value,
@@ -105,15 +103,6 @@ impl ActionHardForkDisplay of Display<ActionHardFork> {
     }
 }
 
-impl ActionMEVBoostDisplay of Display<ActionMEVBoost> {
-    fn fmt(self: @ActionMEVBoost, ref f: Formatter) -> Result<(), Error> {
-        let str: ByteArray = format!("MEV Boost: Value {0}, Index {1}", *self.m_value,
-        *self.m_index);
-        f.buffer.append(@str);
-        return Result::Ok(());
-    }
-}
-
 impl ActionPriorityFeeDisplay of Display<ActionPriorityFee> {
     fn fmt(self: @ActionPriorityFee, ref f: Formatter) -> Result<(), Error> {
         let str: ByteArray = format!("Draw Two Cards: Value {0}, Index {1}",
@@ -126,15 +115,6 @@ impl ActionPriorityFeeDisplay of Display<ActionPriorityFee> {
 impl ActionReplayAttackDisplay of Display<ActionReplayAttack> {
     fn fmt(self: @ActionReplayAttack, ref f: Formatter) -> Result<(), Error> {
         let str: ByteArray = format!("Replay Attack: Value {0}, Index {1}", *self.m_value,
-        *self.m_index);
-        f.buffer.append(@str);
-        return Result::Ok(());
-    }
-}
-
-impl ActionSoftForkDisplay of Display<ActionSoftFork> {
-    fn fmt(self: @ActionSoftFork, ref f: Formatter) -> Result<(), Error> {
-        let str: ByteArray = format!("Soft Fork: Value {0}, Index {1}", *self.m_value,
         *self.m_index);
         f.buffer.append(@str);
         return Result::Ok(());
@@ -168,7 +148,7 @@ impl EnumCardDisplay of Display<EnumCard> {
                 let str: ByteArray = format!("{data}");
                 f.buffer.append(@str);
             },
-            EnumCard::MajorityAttack(data) => {
+            EnumCard::FiftyOnePercentAttack(data) => {
                 let str: ByteArray = format!("{data}");
                 f.buffer.append(@str);
             },
@@ -181,10 +161,6 @@ impl EnumCardDisplay of Display<EnumCard> {
 impl EnumBlockchainTypeDisplay of Display<EnumBlockchainType> {
     fn fmt(self: @EnumBlockchainType, ref f: Formatter) -> Result<(), Error> {
         match self {
-            EnumBlockchainType::Immutable(_) => {
-                let str: ByteArray = format!("Immutable");
-                f.buffer.append(@str);
-            },
             EnumBlockchainType::Blue(_) => {
                 let str: ByteArray = format!("Blue");
                 f.buffer.append(@str);
@@ -280,8 +256,8 @@ impl ActionGasFeeDisplay of Display<ActionGasFee> {
     }
 }
 
-impl ActionMajorityAttackDisplay of Display<ActionMajorityAttack> {
-    fn fmt(self: @ActionMajorityAttack, ref f: Formatter) -> Result<(), Error> {
+impl ActionFiftyOnePercentAttackDisplay of Display<ActionFiftyOnePercentAttack> {
+    fn fmt(self: @ActionFiftyOnePercentAttack, ref f: Formatter) -> Result<(), Error> {
         let mut index = 0;
         while index < self.m_set.len() {
             if let Option::Some(bc) = self.m_set.get(index) {

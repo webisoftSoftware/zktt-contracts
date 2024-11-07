@@ -173,7 +173,6 @@ impl DeckImpl of IDeck {
     fn check_complete_set(self: @ComponentDeck, asset_group_array: Span<StructBlockchain>,
             bc_type: @EnumBlockchainType) -> bool {
         return match bc_type {
-            EnumBlockchainType::Immutable(_) => { return false; },
             EnumBlockchainType::Blue(_) | EnumBlockchainType::DarkBlue(_) | EnumBlockchainType::Gold(_) => {
                 if asset_group_array.len() == 2 {
                     return true;
@@ -200,9 +199,6 @@ impl DeckImpl of IDeck {
 impl EnumBlockchainTypeImpl of IEnumBlockchainType {
     fn get_boost_array(self: @EnumBlockchainType) -> Array<u8> {
         return match self {
-            EnumBlockchainType::Immutable => {
-                return array![];
-            },
             EnumBlockchainType::Blue => {
                 return array![1, 2];
             },
@@ -269,22 +265,16 @@ impl EnumCardImpl of IEnumCard {
             EnumCard::HardFork(data) => {
                 return *data.m_index;
             },
-            EnumCard::MEVBoost(data) => {
-                return *data.m_index;
-            },
             EnumCard::PriorityFee(data) => {
                 return *data.m_index;
             },
             EnumCard::ReplayAttack(data) => {
                 return *data.m_index;
             },
-            EnumCard::SoftFork(data) => {
-                return *data.m_index;
-            },
             EnumCard::FrontRun(data) => {
                 return *data.m_index;
             },
-            EnumCard::MajorityAttack(_) => {
+            EnumCard::FiftyOnePercentAttack(_) => {
                 return 0;
             }
         };
@@ -293,9 +283,6 @@ impl EnumCardImpl of IEnumCard {
     fn get_name(self: @EnumCard) -> ByteArray {
         return self.into();
     }
-
-    // TODO: Review MajorityAttack and change name to FiftyOnePercentAttack
-    // TODO: Remove MEVBoost
 
     fn get_value(self: @EnumCard) -> u8 {
         return match self {
@@ -317,22 +304,16 @@ impl EnumCardImpl of IEnumCard {
             EnumCard::HardFork(data) => {
                 return *data.m_value;
             },
-            EnumCard::MEVBoost(data) => {
-                return *data.m_value;
-            },
             EnumCard::PriorityFee(data) => {
                 return *data.m_value;
             },
             EnumCard::ReplayAttack(data) => {
                 return *data.m_value;
             },
-            EnumCard::SoftFork(data) => {
-                return *data.m_value;
-            },
             EnumCard::FrontRun(data) => {
                 return *data.m_value;
             },
-            EnumCard::MajorityAttack(data) => {
+            EnumCard::FiftyOnePercentAttack(data) => {
                 return *data.m_value;
             }
         };
@@ -365,11 +346,6 @@ impl EnumCardImpl of IEnumCard {
                 data.m_index -= 1;
                 return EnumCard::HardFork(data);
             },
-            EnumCard::MEVBoost(mut data) => {
-                assert!(data.m_index > 0, "No more indices left for {0}", data);
-                data.m_index -= 1;
-                return EnumCard::MEVBoost(data);
-            },
             EnumCard::PriorityFee(mut data) => {
                 assert!(data.m_index > 0, "No more indices left for {0}", data);
                 data.m_index -= 1;
@@ -380,20 +356,15 @@ impl EnumCardImpl of IEnumCard {
                 data.m_index -= 1;
                 return EnumCard::ReplayAttack(data);
             },
-            EnumCard::SoftFork(mut data) => {
-                assert!(data.m_index > 0, "No more indices left for {0}", data);
-                data.m_index -= 1;
-                return EnumCard::SoftFork(data);
-            },
             EnumCard::FrontRun(mut data) => {
                 assert!(data.m_index > 0, "No more indices left for {0}", data);
                 data.m_index -= 1;
                 return EnumCard::FrontRun(data);
             },
-            EnumCard::MajorityAttack(mut data) => {
+            EnumCard::FiftyOnePercentAttack(mut data) => {
                 assert!(data.m_index > 0, "No more indices left for {0}", data);
                 data.m_index -= 1;
-                return EnumCard::MajorityAttack(data);
+                return EnumCard::FiftyOnePercentAttack(data);
             },
             _ => { return self.clone(); }
         };

@@ -7,9 +7,6 @@
 ////////////////////////////////                                    ////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// TODO: COMMENTS OR ADD INITIAL PSEUDOCODE PLEASE
-// TODO: Fix MajorityAttack references Nami
-
 use starknet::ContractAddress;
 use dojo::world::IWorldDispatcher;
 use zktt::models::components{
@@ -253,10 +250,6 @@ mod action_system {
                     // Revert last move for this player.
                     //let revert_action = last_card.revert();
                 },
-                EnumCard::MEVBoost(mev_boost_struct) => {
-                    deck.add(EnumCard::MEVBoost(mev_boost_struct.clone()));
-                    world.write_model(@deck);
-                },
                 EnumCard::PriorityFee(_priority_fee_struct) => {
                      let mut dealer: ComponentDealer = world.read_model(world.dispatcher.contract_address);
                      assert!(!dealer.m_cards.is_empty(), "Dealer has no more cards");
@@ -267,10 +260,6 @@ mod action_system {
                      world.write_model(@dealer);
                 },
                 EnumCard::ReplayAttack(_replay_attack_struct) => {},
-                EnumCard::SoftFork(soft_fork_struct) => {
-                    deck.add(EnumCard::SoftFork(soft_fork_struct.clone()));
-                    world.write_model(@deck);
-                },
                 EnumCard::FrontRun(frontrun_struct) => {
                     let bc_owner = self._get_owner(frontrun_struct.m_blockchain_name);
                     assert!(bc_owner.is_some(), "Blockchain in Frontrun card has no owner");
@@ -286,7 +275,7 @@ mod action_system {
                         panic!("Invalid FrontRun move: Opponent Blockchain not found");
                     }
                 },
-                EnumCard::MajorityAttack(asset_group_struct) => {
+                EnumCard::FiftyOnePercentAttack(asset_group_struct) => {
                     let mut opponent_deck: ComponentDeck = world.read_model(*asset_group_struct.m_owner);
                     let mut player: ComponentPlayer = world.read_model(*caller);
                     let mut opponent_player: ComponentPlayer = world.read_model(*asset_group_struct.m_owner);
