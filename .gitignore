@@ -1,7 +1,8 @@
 # dependencies
 /node_modules
 /target
-manifest_dev.json
+manifest_dev
+Scarb.lock
 
 # testing
 /coverage

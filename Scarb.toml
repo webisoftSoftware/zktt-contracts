@@ -1,5 +1,5 @@
 [package]
-name = "zktt_contracts"
+name = "zktt"
 version = "1.0.0"
 
 [cairo]

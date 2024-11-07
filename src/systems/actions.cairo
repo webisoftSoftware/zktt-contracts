@@ -1,110 +1,256 @@
-use zktt_contracts::models::{Direction, Position};
+////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////  ______  __  __   ______  ______   ////////////////////////////////
+//////////////////////////////// /\___  \/\ \/ /  /\__  _\/\__  _\  ////////////////////////////////
+//////////////////////////////// \/_/  /_\ \  _`-.\/_/\ \/\/_/\ \/  ////////////////////////////////
+////////////////////////////////   /\_____\ \_\ \_\  \ \_\   \ \_\  ////////////////////////////////
+////////////////////////////////   \/_____/\/_/\/_/   \/_/    \/_/  ////////////////////////////////
+////////////////////////////////                                    ////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// define the interface
+// TODO: COMMENTS OR ADD INITIAL PSEUDOCODE PLEASE
+// TODO: Fix MajorityAttack references Nami
+
+use starknet::ContractAddress;
+use dojo::world::IWorldDispatcher;
+use zktt::models::components{
+    EnumCard, EnumGameState, ComponentGame, ComponentHand, ComponentDeck, 
+    ComponentDeposit, ComponentPlayer
+};
+use zktt::models::enums::{EnumMoveError, EnumPlayerTarget, EnumGasFeeType};
+
 #[starknet::interface]
-trait IActions<T> {
-    fn spawn(ref self: T);
-    fn move(ref self: T, direction: Direction);
+trait IActionSystem<T> {
+    fn play(ref self: T, card: EnumCard) -> ();
+    fn move(ref self: T, card: EnumCard) -> ();
+    fn pay_fee(ref self: T, pay: Array<EnumCard>, recipient: ContractAddress, payee: ContractAddress) -> ();
 }
 
-// dojo decorator
 #[dojo::contract]
-pub mod actions {
-    use super::{IActions, Direction, Position, next_position};
-    use starknet::{ContractAddress, get_caller_address};
-    use zktt_contracts::models::{Vec2, Moves, DirectionsAvailable};
+mod action_system {
+    use super::*;
+    use starknet::get_caller_address;
+    use dojo::model::ModelStorage;
 
-    use dojo::model::{ModelStorage, ModelValueStorage};
-    use dojo::event::EventStorage;
+    #[storage]
+    struct Storage {
+        world: IWorldDispatcher,
+    }
 
-    #[derive(Copy, Drop, Serde)]
-    #[dojo::event]
-    pub struct Moved {
-        #[key]
-        pub player: ContractAddress,
-        pub direction: Direction,
+    #[constructor]
+    fn constructor(ref self: ContractState, world: IWorldDispatcher) {
+        self.world.write(world);
     }
 
     #[abi(embed_v0)]
-    impl ActionsImpl of IActions<ContractState> {
-        fn spawn(ref self: ContractState) {
-            // Get the default world.
+    impl ActionSystemImpl of super::IActionSystem<ContractState> {
+        fn play(ref self: ContractState, card: EnumCard) -> () {
             let mut world = self.world_default();
+            let game: ComponentGame = world.read_model(world.dispatcher.contract_address);
+            assert!(game.m_state == EnumGameState::Started, "Game has not started yet");
+            
+            let caller = get_caller_address();
+            assert!(game.m_player_in_turn == caller, "Not player's turn");
 
-            // Get the address of the current caller, possibly the player's address.
-            let player = get_caller_address();
-            // Retrieve the player's current position from the world.
-            let position: Position = world.read_model(player);
+            let mut player: ComponentPlayer = world.read_model(caller);
+            assert!(player.m_has_drawn, "Player needs to draw cards first");
+            assert!(player.m_moves_remaining != 0, "No moves left");
+            assert!(self._is_owner(@card.get_name(), @caller), "Player does not own card");
 
-            // Update the world state with the new data.
-
-            // 1. Move the player's position 10 units in both the x and y direction.
-            let new_position = Position {
-                player, vec: Vec2 { x: position.vec.x + 10, y: position.vec.y + 10 }
-            };
-
-            // Write the new position to the world.
-            world.write_model(@new_position);
-
-            // 2. Set the player's remaining moves to 100.
-            let moves = Moves {
-                player, remaining: 100, last_direction: Direction::None(()), can_move: true
-            };
-
-            // Write the new moves to the world.
-            world.write_model(@moves);
+            self._use_card(@caller, card);
+            player.m_moves_remaining -= 1;
+            world.write_model(@player);
         }
 
-        // Implementation of the move function for the ContractState struct.
-        fn move(ref self: ContractState, direction: Direction) {
-            // Get the address of the current caller, possibly the player's address.
-
+        fn move(ref self: ContractState, card: EnumCard) -> () {
             let mut world = self.world_default();
+            let game: ComponentGame = world.read_model(world.dispatcher.contract_address);
+            assert!(game.m_state == EnumGameState::Started, "Game has not started yet");
+            
+            let caller = get_caller_address();
+            assert!(game.m_player_in_turn == caller, "Not player's turn");
 
-            let player = get_caller_address();
+            let mut player: ComponentPlayer = world.read_model(caller);
+            assert!(player.m_has_drawn, "Player needs to draw cards first");
+            assert!(self._is_owner(@card.get_name(), @caller), "Player does not own card");
 
-            // Retrieve the player's current position and moves data from the world.
-            let position: Position = world.read_model(player);
-            let mut moves: Moves = world.read_model(player);
+            // TODO: Move card around in deck.
+            world.write_model(@player);
+        }
 
-            // Deduct one from the player's remaining moves.
-            moves.remaining -= 1;
+        fn pay_fee(ref self: ContractState, mut pay: Array<EnumCard>, recipient: ContractAddress, payee: ContractAddress) -> () {
+            let mut world = self.world_default();
+            let game: ComponentGame = world.read_model(world.dispatcher.contract_address);
+            assert!(game.m_state == EnumGameState::Started, "Game has not started yet");
 
-            // Update the last direction the player moved in.
-            moves.last_direction = direction;
+            let mut player: ComponentPlayer = world.read_model(payee);
+            let mut payee_stash: ComponentDeposit = world.read_model(payee);
+            let mut payee_deck: ComponentDeck = world.read_model(payee);
+            assert!(player.get_debt().is_some(), "Player is not in debt");
 
-            // Calculate the player's next position based on the provided direction.
-            let next = next_position(position, direction);
+            let mut recipient_stash: ComponentDeposit = world.read_model(recipient);
+            let mut recipient_deck: ComponentDeposit = world.read_model(recipient);
 
-            // Write the new position to the world.
-            world.write_model(@next);
+            while let Option::Some(card) = pay.pop_front() {
+                if !card.is_blockchain() {
+                    payee_stash.remove(@card.get_name());
+                    recipient_stash.add(card);
+                } else {
+                    payee_deck.remove(@card.get_name());
+                    recipient_deck.add(card);
+                }
+            };
 
-            // Write the new moves to the world.
-            world.write_model(@moves);
-
-            // Emit an event to the world to notify about the player's move.
-            world.emit_event(@Moved { player, direction });
+            player.m_in_debt = Option::None;
+            world.write_model(@recipient_stash);
+            world.write_model(@recipient_deck);
+            world.write_model(@payee_stash);
+            world.write_model(@payee_deck);
+            world.write_model(@player);
         }
     }
 
     #[generate_trait]
     impl InternalImpl of InternalTrait {
-        /// Use the default namespace "zktt_contracts". This function is handy since the ByteArray
-        /// can't be const.
         fn world_default(self: @ContractState) -> dojo::world::WorldStorage {
-            self.world(@"zktt_contracts")
+            self.world(@"zktt")
+        }
+
+        fn _is_owner(ref self: ContractState, card_name: @ByteArray, caller: @ContractAddress) -> bool {
+            let mut world = self.world_default();
+            let hand: ComponentHand = world.read_model(*caller);
+            let deck: ComponentDeck = world.read_model(*caller);
+            let deposit: ComponentDeposit = world.read_model(*caller);
+
+            hand.contains(card_name).is_some() || 
+            deck.contains(card_name).is_some() ||
+            deposit.contains(card_name).is_some()
+        }
+
+        fn _use_card(ref self: ContractState, caller: @ContractAddress, card: EnumCard) -> () {
+            let mut world = self.world_default();
+            let mut hand: ComponentHand = world.read_model(*caller);
+            let mut deck: ComponentDeck = world.read_model(*caller);
+            let mut deposit: ComponentDeposit = world.read_model(*caller);
+            assert!(hand.contains(@card.get_name()).is_some(), "Card not in player's hand");
+            hand.remove(@card.get_name());
+
+            match @card {
+                EnumCard::Asset(asset) => {
+                    deposit.add(EnumCard::Asset(asset.clone()));
+                    world.write_model(@deposit);
+                },
+                EnumCard::Blockchain(blockchain_struct) => {
+                    deck.add(EnumCard::Blockchain(blockchain_struct.clone()));
+                    world.write_model(@deck);
+                },
+                EnumCard::ChainReorg(chain_reorg_struct) => {
+                    deck.add(EnumCard::ChainReorg(chain_reorg_struct.clone()));
+                    world.write_model(@deck);
+                },
+                EnumCard::ClaimYield(_claim_yield_struct) => {},
+                EnumCard::GasFee(gas_fee_struct) => {
+                    assert!(gas_fee_struct.m_color_chosen.is_some(), "Invalid Gas Fee move: No color specified");
+                    match gas_fee_struct.m_blockchain_type_affected {
+                        EnumGasFeeType::Any(color) =>  {
+                            if color != @(*gas_fee_struct.m_color_chosen).unwrap() {
+                                panic!("Invalid Gas Fee move: Color does not match allowed colors");
+                            }
+                        },
+                        EnumGasFeeType::AgainstTwo((color1, color2)) => {
+                            if color1 != @(*gas_fee_struct.m_color_chosen).unwrap() && color2 !=
+                                @(*gas_fee_struct.m_color_chosen).unwrap() {
+                                panic!("Invalid Gas Fee move: Color does not match allowed colors");
+                            }
+                        }
+                    };
+
+                    let fee: u8 = gas_fee_struct.get_fee();
+
+                    match gas_fee_struct.m_players_affected {
+                        EnumPlayerTarget::All(_) => {
+                            let mut index = 0;
+                            let game: ComponentGame = world.read_model(world.dispatcher.contract_address);
+
+                            while index < game.m_players.len() {
+                                let mut player_component: ComponentPlayer = world.read_model(*game.m_players.at(index));
+                                player_component.m_in_debt = Option::Some(fee);
+                                world.write_model(@player_component);
+                                index += 1;
+                            };
+                        },
+                        EnumPlayerTarget::One(player) => {
+                            let mut player_component: ComponentPlayer = world.read_model(*player);
+                            player_component.m_in_debt = Option::Some(fee);
+                            world.write_model(@player_component);
+                        },
+                        _ => panic!("Invalid Gas Fee move: No players targeted")
+                    };
+                },
+                EnumCard::HardFork(_hardfork_struct) => {
+
+                    //let mut discard_pile = world.read_model(world.dispatcher.contract_address), (ComponentDiscardPile));
+                    //let last_card = discard_pile.m_cards.at(discard_pile.m_cards.len() - 1);
+
+                    // Revert last move for this player.
+                    //let revert_action = last_card.revert();
+                },
+                EnumCard::MEVBoost(mev_boost_struct) => {
+                    deck.add(EnumCard::MEVBoost(mev_boost_struct.clone()));
+                    world.write_model(@deck);
+                },
+                EnumCard::PriorityFee(_priority_fee_struct) => {
+                     let mut dealer: ComponentDealer = world.read_model(world.dispatcher.contract_address);
+                     assert!(!dealer.m_cards.is_empty(), "Dealer has no more cards");
+
+                     hand.add(dealer.pop_card().unwrap());
+                     hand.add(dealer.pop_card().unwrap());
+                     world.write_model(@hand);
+                     world.write_model(@dealer);
+                },
+                EnumCard::ReplayAttack(_replay_attack_struct) => {},
+                EnumCard::SoftFork(soft_fork_struct) => {
+                    deck.add(EnumCard::SoftFork(soft_fork_struct.clone()));
+                    world.write_model(@deck);
+                },
+                EnumCard::FrontRun(frontrun_struct) => {
+                    let bc_owner = self._get_owner(frontrun_struct.m_blockchain_name);
+                    assert!(bc_owner.is_some(), "Blockchain in Frontrun card has no owner");
+
+                    let mut opponent_deck: ComponentDeck = world.read_model(bc_owner.unwrap());
+                    if let Option::Some(card_index) = opponent_deck.contains(frontrun_struct.m_blockchain_name) {
+                        deck.add(opponent_deck.m_cards.at(card_index).clone());
+                        opponent_deck.remove(frontrun_struct.m_blockchain_name);
+                        world.write_model(@deck);
+                        world.write_model(@deck);
+                        world.write_model(@opponent_deck);
+                    } else {
+                        panic!("Invalid FrontRun move: Opponent Blockchain not found");
+                    }
+                },
+                EnumCard::MajorityAttack(asset_group_struct) => {
+                    let mut opponent_deck: ComponentDeck = world.read_model(*asset_group_struct.m_owner);
+                    let mut player: ComponentPlayer = world.read_model(*caller);
+                    let mut opponent_player: ComponentPlayer = world.read_model(*asset_group_struct.m_owner);
+
+                    player.m_sets += 1;
+                    opponent_player.m_sets -= 1;
+
+                    let mut index: usize = 0;
+                    while let Option::Some(bc_name) = asset_group_struct.m_set.get(index) {
+                        if let Option::Some(blockchain_index) = opponent_deck.contains(bc_name.unbox()) {
+                            deck.add(opponent_deck.m_cards.at(blockchain_index).clone());
+                            opponent_deck.remove(bc_name.unbox());
+                        }
+                        index += 1;
+                    };
+                    world.write_model(@player);
+                    world.write_model(@deck);
+                    world.write_model(@opponent_deck);
+                },
+                _ => panic!("Invalid or illegal move!")
+            };
+
+            return ();
         }
     }
-}
-
-// Define function like this:
-fn next_position(mut position: Position, direction: Direction) -> Position {
-    match direction {
-        Direction::None => { return position; },
-        Direction::Left => { position.vec.x -= 1; },
-        Direction::Right => { position.vec.x += 1; },
-        Direction::Up => { position.vec.y -= 1; },
-        Direction::Down => { position.vec.y += 1; },
-    };
-    position
 }

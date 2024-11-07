@@ -7,16 +7,9 @@
 ////////////////////////////////                                    ////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-mod models {
-    mod components;
-    mod enums;
-    mod structs;
-    mod traits {
-    }
-}
+// TODO: Can we get some comments guys.
 
-mod systems {
-    mod actions;
-    mod game;
-    mod player;
-}
+mod display;
+mod into;
+mod partialeq;
+mod game;
