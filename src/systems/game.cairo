@@ -7,8 +7,6 @@
 ////////////////////////////////                                    ////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// TODO: Add comments to each component
-
 #[starknet::interface]
 trait IGameSystem<T> {
     fn start(ref self: T) -> ();
@@ -35,6 +33,22 @@ mod game_system {
 
     #[abi(embed_v0)]
     impl GameSystemImpl of super::IGameSystem<ContractState> {
+
+        //////////////////////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////// EXTERNAL /////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////////
+        
+        /// Starts the game and denies any new players from joining, as long as there are at
+        /// least two players that have joined for up to a maximum of 5 players.
+        ///
+        /// Inputs:
+        /// *world*: The mutable reference of the world to write components to.
+        ///
+        /// Output:
+        /// None.
+        /// Can Panic?: yes
         fn start(ref self: ContractState) -> () {
             let mut world = self.world_default();
             let seed = world.dispatcher.contract_address;
@@ -58,6 +72,15 @@ mod game_system {
             world.write_model(@game);
         }
 
+        /// Signal the end of a turn for the caller. This renders all other moves forbidden until
+        /// next turn.
+        ///
+        /// Inputs:
+        /// *world*: The mutable reference of the world to write components to.
+        ///
+        /// Output:
+        /// None.
+        /// Can Panic?: yes
         fn end_turn(ref self: ContractState) -> () {
             let mut world = self.world_default();
             let mut game: ComponentGame = world.read_model(world.dispatcher.contract_address);
@@ -71,10 +94,30 @@ mod game_system {
 
     #[generate_trait]
     impl InternalImpl of InternalTrait {
+
+        //////////////////////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////// INTERNAL /////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////////
+
+        /// Use the default namespace "zktt". This function is handy since the ByteArray
+        /// can't be const.
         fn world_default(self: @ContractState) -> dojo::world::WorldStorage {
             self.world(@"zktt")
         }
 
+        /// Create the seed to provide to the randomizer for shuffling cards in the deck at the beginning
+        /// of the game. The seed is meant to be a deterministic ranzomized hash, in the event that the
+        /// game needs to be inspected and verified for proof.
+        ///
+        /// Inputs:
+        /// *world*: The mutable reference of the world to write components to.
+        /// *players: The array of all the players that have joined in the world.
+        ///
+        /// Output:
+        /// The resulting seed hash.
+        /// Can Panic?: yes
         fn _generate_seed(
             world_address: @ContractAddress, players: @Array<ContractAddress>
         ) -> felt252 {
@@ -92,6 +135,17 @@ mod game_system {
             return seed;
         }
 
+        /// Take cards from the dealer's deck and distribute them across all players at the table.
+        /// Five cards per player.
+        ///
+        /// Inputs:
+        /// *world*: The mutable reference of the world to write components to.
+        /// *players: The mutable reference of all the players that have joined in the world.
+        /// *cards*: The dealer's cards to take cards from.
+        ///
+        /// Output:
+        /// None.
+        /// Can Panic?: yes
         fn _distribute_cards(
             ref self: ContractState, ref players: Array<ContractAddress>, ref cards: Array<EnumCard>
         ) -> () {
@@ -117,6 +171,14 @@ mod game_system {
             }
         }
 
+        /// Create the initial deck of cards for the game in a deterministic manner to then shuffle.
+        ///
+        /// Inputs:
+        /// *world*: The mutable reference of the world to write components to.
+        ///
+        /// Output:
+        /// The deck with one copy of all the card types (unflatten) [59].
+        /// Can Panic?: no
         fn _create_cards() -> Array<EnumCard> nopanic {
             // Step 1: Create cards and put them in a container in order.
             let cards_in_order: Array<EnumCard> = // Eth.
@@ -240,16 +302,26 @@ mod game_system {
                     )
                 ),
                 // EnumCard::ReplayAttack(IReplayAttack::new(1, 2)),
-            // EnumCard::ChainReorg(IChainReorg::new(3, 3)),
-            // EnumCard::HardFork(IHardFork::new(3, 3)),
-            // EnumCard::SoftFork(ISoftFork::new(3, 3)),
-            // EnumCard::MEVBoost(IMEVBoost::new(3, 3)),
+                // EnumCard::ChainReorg(IChainReorg::new(3, 3)),
+                // EnumCard::HardFork(IHardFork::new(3, 3)),
+                // EnumCard::SoftFork(ISoftFork::new(3, 3)),
+                // EnumCard::MEVBoost(IMEVBoost::new(3, 3)),
             ];
 
             return cards_in_order;
         }
 
+        /// Create the initial deck of cards for the game and assign them to the dealer. Only ran once
+        /// when the contract deploys (sort of acting as a singleton).
+        ///
+        /// Inputs:
+        /// *world*: The mutable reference of the world to write components to.
+        ///
+        /// Output:
+        /// None.
+        /// Can Panic?: yes
         fn dojo_init(ref self: ContractState) {
+            // Step 1: Create cards and put them in a container in order.
             let mut world = self.world_default();
             let cards_in_order = Self::_create_cards();
             let dealer: ComponentDealer = IDealer::new(
