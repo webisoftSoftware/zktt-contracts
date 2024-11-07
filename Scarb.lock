@@ -28,7 +28,7 @@ version = "1.0.0-alpha.19"
 source = "git+https://github.com/dojoengine/origami.git#89172a1dcb6992763369df732e17e2368e2324bd"
 
 [[package]]
-name = "zktt_contracts"
+name = "zktt"
 version = "1.0.0"
 dependencies = [
  "dojo",

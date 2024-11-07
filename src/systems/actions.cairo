@@ -10,8 +10,11 @@
 // TODO: Fix MajorityAttack references Nami
 use starknet::ContractAddress;
 use zktt::models::enums::{EnumCard, EnumGameState, EnumGasFeeType, EnumPlayerTarget};
+
+
 #[starknet::interface]
 trait IActionSystem<T> {
+    fn draw(ref self: T, draws_five: bool) -> ();
     fn play(ref self: T, card: EnumCard) -> ();
     fn move(ref self: T, card: EnumCard) -> ();
     fn pay_fee(
@@ -43,6 +46,58 @@ mod action_system {
         /////////////////////////////// EXTERNAL /////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////////
+
+        /// Adds two new cards from the dealer's deck to the active caller's hand, during their turn.
+        /// This can only happen once per turn, at the beginning of it (first move).
+        ///
+        /// Inputs:
+        /// *world*: The mutable reference of the world to write components to.
+        /// *draws_five*: Flag indicating if the active caller can draw five cards from the deck
+        /// instead of the typical two. This behavior can only happend if the player has no more
+        /// cards left in their hand at the end of their last turn.
+        ///
+        /// Output:
+        /// None.
+        /// Can Panic?: yes
+        fn draw(ref self: ContractState, draws_five: bool) -> () {
+            let mut world = self.world_default();
+            let caller = get_caller_address();
+            let mut hand: ComponentHand = world.read_model(caller);
+            let mut player: ComponentPlayer = world.read_model(caller);
+            let game: ComponentGame = world.read_model(world.dispatcher.contract_address);
+
+            assert!(game.m_state == EnumGameState::Started, "Game has not started yet");
+            assert!(game.m_player_in_turn == caller, "Not player's turn");
+            assert!(!player.m_has_drawn, "Cannot draw mid-turn");
+
+            let mut dealer: ComponentDealer = world.read_model(world.dispatcher.contract_address);
+
+            if draws_five {
+                assert!(hand.m_cards.len() == 0, "Cannot draw five, hand not empty");
+                let mut index: usize = 0;
+                while index < 5 {
+                    if dealer.m_cards.is_empty() {
+                        panic!("Dealer has no more cards");
+                    }
+                    let card = dealer.pop_card().unwrap();
+                    hand.add(card);
+                    index += 1;
+                }
+            } else {
+                let card1_opt = dealer.pop_card();
+                let card2_opt = dealer.pop_card();
+                assert!(
+                    card1_opt.is_some() && card2_opt.is_some(), "Deck does not have any more cards!"
+                );
+                hand.add(card1_opt.unwrap());
+                hand.add(card2_opt.unwrap());
+            }
+
+            player.m_has_drawn = true;
+            world.write_model(@hand);
+            world.write_model(@dealer);
+            world.write_model(@player);
+        }
         
         /// Adds two new cards from the dealer's deck to the active caller's hand, during their turn.
         /// This can only happen once per turn, at the beginning of it (first move).
@@ -105,7 +160,7 @@ mod action_system {
         /// Make the caller pay the recipient the amount owed. This happens when the recipient plays
         /// the 'Claim' action card beforehand and targets this caller with it. Once the recipient's
         /// turn is over, the payee(s) will have a status of 'InDebt' which will prompt them to pay
-        /// the fees upon their turn (unless 'HardFork' is played). The payee(s) cannot initiate
+        /// the fees upon their turn. The payee(s) cannot initiate
         /// turns until the amount owed has been payed, either partially (if they do not have
         /// enough funds) or fully.
         ///
@@ -270,18 +325,6 @@ mod action_system {
                         _ => panic!("Invalid Gas Fee move: No players targeted")
                     };
                 },
-                EnumCard::HardFork(_hardfork_struct) => { 
-                    //let mut discard_pile = world.read_model(world.dispatcher.contract_address),
-                    //(ComponentDiscardPile));
-                    //let last_card = discard_pile.m_cards.at(discard_pile.m_cards.len() - 1);
-
-                    // Revert last move for this player.
-                    //let revert_action = last_card.revert();
-                },
-                EnumCard::MEVBoost(mev_boost_struct) => {
-                    deck.add(EnumCard::MEVBoost(mev_boost_struct.clone()));
-                    world.write_model(@deck);
-                },
                 EnumCard::PriorityFee(_priority_fee_struct) => {
                     let mut dealer: ComponentDealer = world
                         .read_model(world.dispatcher.contract_address);
@@ -293,10 +336,6 @@ mod action_system {
                     world.write_model(@dealer);
                 },
                 EnumCard::ReplayAttack(_replay_attack_struct) => {},
-                EnumCard::SoftFork(soft_fork_struct) => {
-                    deck.add(EnumCard::SoftFork(soft_fork_struct.clone()));
-                    world.write_model(@deck);
-                },
                 EnumCard::FrontRun(frontrun_struct) => {
                     let bc_owner = self._get_owner(frontrun_struct.m_blockchain_name);
                     assert!(bc_owner.is_some(), "Blockchain in Frontrun card has no owner");
@@ -313,7 +352,7 @@ mod action_system {
                         panic!("Invalid FrontRun move: Opponent Blockchain not found");
                     }
                 },
-                EnumCard::MajorityAttack(asset_group_struct) => {
+                EnumCard::FiftyOnePercentAttack(asset_group_struct) => {
                     let mut opponent_deck: ComponentDeck = world
                         .read_model(*asset_group_struct.m_owner);
                     let mut player: ComponentPlayer = world.read_model(*caller);

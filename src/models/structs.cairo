@@ -58,8 +58,8 @@ impl ActionGasFeeEq of PartialEq<ActionGasFee> {
     }
 }
 
-impl ActionMajorityAttackEq of PartialEq<ActionMajorityAttack> {
-    fn eq(lhs: @ActionMajorityAttack, rhs: @ActionMajorityAttack) -> bool {
+impl ActionFiftyOnePercentAttackEq of PartialEq<ActionFiftyOnePercentAttack> {
+    fn eq(lhs: @ActionFiftyOnePercentAttack, rhs: @ActionFiftyOnePercentAttack) -> bool {
         let mut index: usize = 0;
         return loop {
             if index >= lhs.m_set.len() {
@@ -143,30 +143,6 @@ struct ActionGasFee {
     m_index: u8
 }
 
-/// Useable within 10 seconds of certain Onchain Events - cancels other players Onchain Event card.
-///
-/// Fields:
-/// *m_value*: Value of the card itself, in case we want to give it as eth.
-/// *m_index*: The card index from all of its duplicates in the deck.
-#[derive(Drop, Serde, Clone, Introspect, PartialEq, Debug)]
-struct ActionHardFork {
-    m_value: u8,
-    m_index: u8
-}
-
-/// Add onto any full blockchain set owned to add 3 ETH to value.
-///
-/// Fields:
-/// *m_full_set*: A array of blockchain names, pointing to which blockchains should this apply for.
-/// *m_value*: Value of the card itself, in case we want to give it as eth.
-/// *m_index*: The card index from all of its duplicates in the deck.
-#[derive(Drop, Serde, Clone, Introspect, PartialEq, Debug)]
-struct ActionMEVBoost {
-    m_full_set: Array<ByteArray>,
-    m_value: u8,
-    m_index: u8
-}
-
 /// Steal an asset group from an opponent.
 ///
 /// Fields:
@@ -174,7 +150,7 @@ struct ActionMEVBoost {
 /// *m_value*: Value of the card itself, in case we want to give it as eth.
 /// *m_index*: The card index from all of its duplicates in the deck.
 #[derive(Drop, Serde, Clone, Introspect, Debug)]
-struct ActionMajorityAttack {
+struct ActionFiftyOnePercentAttack {
     m_owner: ContractAddress,
     m_set: Array<ByteArray>,
     m_value: u8,
@@ -199,19 +175,6 @@ struct ActionPriorityFee {
 /// *m_index*: The card index from all of its duplicates in the deck.
 #[derive(Drop, Serde, Clone, Introspect, PartialEq, Debug)]
 struct ActionReplayAttack {
-    m_value: u8,
-    m_index: u8
-}
-
-/// Add onto any full blockchain set owned to add 4 ETH to value.
-///
-/// Fields:
-/// *m_full_set*: A array of blockchain names, pointing to which blockchains should this apply for.
-/// *m_value*: Value of the card itself, in case we want to give it as eth.
-/// *m_index*: The card index from all of its duplicates in the deck.
-#[derive(Drop, Serde, Clone, Introspect, PartialEq, Debug)]
-struct ActionSoftFork {
-    m_full_set: Array<ByteArray>,
     m_value: u8,
     m_index: u8
 }

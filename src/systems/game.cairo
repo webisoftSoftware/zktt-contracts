@@ -235,7 +235,7 @@ mod game_system {
                 // Actions.
                 // EnumCard::PriorityFee(IPriorityFee::new(1, 10)),
                 // EnumCard::ClaimYield(IClaimYield::new(2, 3)),
-                // EnumCard::MajorityAttack(IMajorityAttack::new(Option::None, Option::None, 5, 1)),
+                // EnumCard::FiftyOnePercentAttack(IFiftyOnePercentAttack::new(Option::None, Option::None, 5, 1)),
                 // EnumCard::FrontRun(IFrontRun::new(Option::None, Option::None, 3, 3)),
                 EnumCard::GasFee(
                     IGasFee::new(
@@ -302,10 +302,7 @@ mod game_system {
                     )
                 ),
                 // EnumCard::ReplayAttack(IReplayAttack::new(1, 2)),
-                // EnumCard::ChainReorg(IChainReorg::new(3, 3)),
-                // EnumCard::HardFork(IHardFork::new(3, 3)),
-                // EnumCard::SoftFork(ISoftFork::new(3, 3)),
-                // EnumCard::MEVBoost(IMEVBoost::new(3, 3)),
+            // EnumCard::ChainReorg(IChainReorg::new(3, 3)),
             ];
 
             return cards_in_order;
