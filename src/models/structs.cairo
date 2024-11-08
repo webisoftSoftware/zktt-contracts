@@ -107,6 +107,17 @@ struct ActionClaimYield {
     m_index: u8
 }
 
+/// All other players pay you 5 ETH.
+///
+/// Fields:
+/// *m_value*: Value of the card itself, in case we want to give it as eth.
+/// *m_index*: The card index from all of its duplicates in the deck.
+#[derive(Drop, Serde, Clone, Introspect, PartialEq, Debug)]
+struct ActionSandwichAttack {
+    m_value: u8,
+    m_index: u8
+}
+
 /// Card that allows a player to steal a blockchain from another player's deck.
 ///
 /// Fields:

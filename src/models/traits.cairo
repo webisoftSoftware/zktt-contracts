@@ -12,7 +12,8 @@ use core::fmt::{Display, Formatter, Error};
 use origami_random::deck::{Deck, DeckTrait};
 use zktt::models::structs::{
     StructAsset, StructBlockchain, StructAssetGroup, ActionPriorityFee, ActionChainReorg,
-    ActionClaimYield, ActionFrontrun, ActionReplayAttack, ActionGasFee, ActionFiftyOnePercentAttack
+    ActionSandwichAttack, ActionClaimYield, ActionFrontrun, ActionReplayAttack, ActionGasFee,
+    ActionFiftyOnePercentAttack
 };
 use zktt::models::enums::{
     EnumCard, EnumBlockchainType, EnumGasFeeType, EnumMoveError, EnumPlayerTarget
@@ -326,6 +327,7 @@ impl EnumCardInto of Into<@EnumCard, ByteArray> {
             EnumCard::ReplayAttack(_) => "Replay Attack",
             EnumCard::FrontRun(_) => "Frontrun",
             EnumCard::FiftyOnePercentAttack(_) => "51% Attack",
+            EnumCard::SandwichAttack(_) => "Sandwich Attack"
         };
     }
 }
@@ -556,7 +558,8 @@ impl EnumCardImpl of IEnumCard {
             EnumCard::PriorityFee(data) => { return *data.m_index; },
             EnumCard::ReplayAttack(data) => { return *data.m_index; },
             EnumCard::FrontRun(data) => { return *data.m_index; },
-            EnumCard::FiftyOnePercentAttack(_) => { return 0; }
+            EnumCard::FiftyOnePercentAttack(_) => { return 0; },
+            EnumCard::SandwichAttack(data) => { return *data.m_index; }
         };
     }
 
@@ -574,7 +577,8 @@ impl EnumCardImpl of IEnumCard {
             EnumCard::PriorityFee(data) => { return *data.m_value; },
             EnumCard::ReplayAttack(data) => { return *data.m_value; },
             EnumCard::FrontRun(data) => { return *data.m_value; },
-            EnumCard::FiftyOnePercentAttack(data) => { return *data.m_value; }
+            EnumCard::FiftyOnePercentAttack(data) => { return *data.m_value; },
+            EnumCard::SandwichAttack(data) => { return *data.m_value; }
         };
     }
 
@@ -720,6 +724,64 @@ impl GasFeeImpl of IGasFee {
 
     fn get_fee(self: @ActionGasFee) -> u8 {
         return *self.m_set_applied.at(0).m_bc_type.get_boost_array().at(self.m_set_applied.len());
+    }
+}
+
+#[generate_trait]
+impl ClaimYieldImpl of IClaimYield {
+    fn new(value: u8, copies_left: u8) -> ActionClaimYield nopanic {
+        return ActionClaimYield { m_value: value, m_index: copies_left };
+    }
+}
+
+#[generate_trait]
+impl SandwichAttackImpl of ISandwichAttack {
+    fn new(value: u8, copies_left: u8) -> ActionSandwichAttack nopanic {
+        return ActionSandwichAttack { m_value: value, m_index: copies_left };
+    }
+}
+
+#[generate_trait]
+impl FiftyOnePercentAttackImpl of IFiftyOnePercentAttack {
+    fn new(
+        owner: ContractAddress, set: Array<ByteArray>, value: u8, copies_left: u8
+    ) -> ActionFiftyOnePercentAttack nopanic {
+        return ActionFiftyOnePercentAttack {
+            m_owner: owner, m_set: set, m_value: value, m_index: copies_left
+        };
+    }
+}
+
+#[generate_trait]
+impl PriorityFeeImpl of IPriorityFee {
+    fn new(value: u8, copies_left: u8) -> ActionPriorityFee nopanic {
+        return ActionPriorityFee { m_value: value, m_index: copies_left };
+    }
+}
+
+#[generate_trait]
+impl FrontRunImpl of IFrontRun {
+    fn new(blockchain_name: ByteArray, value: u8, copies_left: u8) -> ActionFrontrun nopanic {
+        return ActionFrontrun {
+            m_blockchain_name: blockchain_name, m_value: value, m_index: copies_left
+        };
+    }
+}
+
+#[generate_trait]
+impl ChainReorgImpl of IChainReorg {
+    fn new(
+        self_blockchain_name: ByteArray,
+        opponent_blockchain_name: ByteArray,
+        value: u8,
+        copies_left: u8
+    ) -> ActionChainReorg nopanic {
+        return ActionChainReorg {
+            m_self_blockchain_name: self_blockchain_name,
+            m_opponent_blockchain_name: opponent_blockchain_name,
+            m_value: value,
+            m_index: copies_left
+        };
     }
 }
 
