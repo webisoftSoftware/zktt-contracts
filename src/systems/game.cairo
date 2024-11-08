@@ -21,7 +21,8 @@ mod game_system {
     };
     use zktt::models::traits::{
         IEnumCard, IPlayer, IDeck, IDealer, IHand, IGasFee, IAssetGroup, IDraw, IGame, IAsset,
-        IBlockchain, IDeposit
+        IBlockchain, IDeposit, IClaimYield, IFiftyOnePercentAttack, IChainReorg, IFrontRun,
+        ISandwichAttack, IPriorityFee
     };
     use zktt::models::enums::{
         EnumGasFeeType, EnumPlayerTarget, EnumGameState, EnumBlockchainType, EnumCard
@@ -231,11 +232,17 @@ mod game_system {
                 EnumCard::Blockchain(IBlockchain::new("Ton", EnumBlockchainType::Blue, 1, 1)),
                 EnumCard::Blockchain(IBlockchain::new("ZKSync", EnumBlockchainType::Grey, 1, 2)),
                 // Actions.
-                // EnumCard::PriorityFee(IPriorityFee::new(1, 10)),
-                // EnumCard::ClaimYield(IClaimYield::new(2, 3)),
-                // EnumCard::FiftyOnePercentAttack(IFiftyOnePercentAttack::new(Option::None,
-                // Option::None, 5, 1)), EnumCard::FrontRun(IFrontRun::new(Option::None,
-                // Option::None, 3, 3)),
+                EnumCard::PriorityFee(IPriorityFee::new(1, 10)),
+                EnumCard::ClaimYield(IClaimYield::new(2, 3)),
+                EnumCard::FiftyOnePercentAttack(
+                    IFiftyOnePercentAttack::new(
+                        starknet::contract_address_const::<0x0>(), array![], 5, 1
+                    )
+                ),
+                EnumCard::ChainReorg(IChainReorg::new("", "", 3, 3)),
+                EnumCard::FrontRun(IFrontRun::new("", 3, 3)),
+                EnumCard::SandwichAttack(ISandwichAttack::new(3, 3)),
+                // EnumCard::ReplayAttack(IReplayAttack::new(1, 2)),
                 EnumCard::GasFee(
                     IGasFee::new(
                         EnumPlayerTarget::All,
@@ -300,11 +307,31 @@ mod game_system {
                         3
                     )
                 ),
-                // EnumCard::ReplayAttack(IReplayAttack::new(1, 2)),
-            // EnumCard::ChainReorg(IChainReorg::new(3, 3)),
             ];
 
             return cards_in_order;
+        }
+
+        /// Flatten all copies of blockchains, Assets, and Action Cards in one big array for the
+        /// dealer.
+        ///
+        /// Inputs:
+        /// *container*: The deck with one copy of all the card types (unflatten) [59].
+        ///
+        /// Output:
+        /// The deck with all copies of all the card types (flattened) [105].
+        /// Can Panic?: yes
+        fn _flatten(mut container: Array<EnumCard>) -> Array<EnumCard> {
+            let mut flattened_array = ArrayTrait::new();
+
+            while let Option::Some(mut card) = container.pop_front() {
+                let mut index_left: u8 = card.get_index();
+                while index_left > 0 {
+                    flattened_array.append(card.remove_one_index());
+                    index_left -= 1;
+                };
+            };
+            return flattened_array;
         }
 
         /// Create the initial deck of cards for the game and assign them to the dealer. Only ran
@@ -320,8 +347,9 @@ mod game_system {
             // Step 1: Create cards and put them in a container in order.
             let mut world = self.world_default();
             let cards_in_order = Self::_create_cards();
+            let flattened_cards = Self::_flatten(cards_in_order);
             let dealer: ComponentDealer = IDealer::new(
-                world.dispatcher.contract_address, cards_in_order
+                world.dispatcher.contract_address, flattened_cards
             );
             world.write_model(@dealer);
         }

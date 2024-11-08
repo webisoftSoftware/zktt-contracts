@@ -66,6 +66,7 @@ mod action_system {
             let mut player: ComponentPlayer = world.read_model(caller);
             let game: ComponentGame = world.read_model(world.dispatcher.contract_address);
 
+            assert!(game.m_state != EnumGameState::WaitingForRent, "Game is paused");
             assert!(game.m_state == EnumGameState::Started, "Game has not started yet");
             assert!(game.m_player_in_turn == caller, "Not player's turn");
             assert!(!player.m_has_drawn, "Cannot draw mid-turn");
@@ -115,6 +116,7 @@ mod action_system {
         fn play(ref self: ContractState, card: EnumCard) -> () {
             let mut world = self.world_default();
             let game: ComponentGame = world.read_model(world.dispatcher.contract_address);
+            assert!(game.m_state != EnumGameState::WaitingForRent, "Game is paused");
             assert!(game.m_state == EnumGameState::Started, "Game has not started yet");
 
             let caller = get_caller_address();
@@ -146,6 +148,7 @@ mod action_system {
         fn move(ref self: ContractState, card: EnumCard) -> () {
             let mut world = self.world_default();
             let game: ComponentGame = world.read_model(world.dispatcher.contract_address);
+            assert!(game.m_state != EnumGameState::WaitingForRent, "Game is paused");
             assert!(game.m_state == EnumGameState::Started, "Game has not started yet");
 
             let caller = get_caller_address();
@@ -180,8 +183,8 @@ mod action_system {
             payee: ContractAddress
         ) -> () {
             let mut world = self.world_default();
-            let game: ComponentGame = world.read_model(world.dispatcher.contract_address);
-            assert!(game.m_state == EnumGameState::Started, "Game has not started yet");
+            let mut game: ComponentGame = world.read_model(world.dispatcher.contract_address);
+            assert!(game.m_state == EnumGameState::WaitingForRent, "Game must be waiting for rent");
 
             let mut player: ComponentPlayer = world.read_model(payee);
             let mut payee_stash: ComponentDeposit = world.read_model(payee);
@@ -205,6 +208,8 @@ mod action_system {
             world.write_model(@payee_stash);
             world.write_model(@payee_deck);
             world.write_model(@player);
+            game.m_state = EnumGameState::Started;
+            world.write_model(@game);
         }
     }
 
@@ -277,7 +282,32 @@ mod action_system {
                     deck.add(EnumCard::ChainReorg(chain_reorg_struct.clone()));
                     world.write_model(@deck);
                 },
-                EnumCard::ClaimYield(_claim_yield_struct) => {},
+                EnumCard::ClaimYield(_claim_yield_struct) => {
+                    let mut game: ComponentGame = world
+                        .read_model(world.dispatcher.contract_address);
+                    game.m_state = EnumGameState::WaitingForRent;
+                    for player in game
+                        .m_players
+                        .span() {
+                            let mut player_component: ComponentPlayer = world.read_model(*player);
+                            player_component.m_in_debt = Option::Some(2);
+                            world.write_model(@player_component);
+                        };
+                    world.write_model(@game);
+                },
+                EnumCard::SandwichAttack(_sandwich_attack_struct) => {
+                    let mut game: ComponentGame = world
+                        .read_model(world.dispatcher.contract_address);
+                    game.m_state = EnumGameState::WaitingForRent;
+                    for player in game
+                        .m_players
+                        .span() {
+                            let mut player_component: ComponentPlayer = world.read_model(*player);
+                            player_component.m_in_debt = Option::Some(5);
+                            world.write_model(@player_component);
+                        };
+                    world.write_model(@game);
+                },
                 EnumCard::GasFee(gas_fee_struct) => {
                     assert!(
                         gas_fee_struct.m_color_chosen.is_some(),
@@ -305,9 +335,10 @@ mod action_system {
                     match gas_fee_struct.m_players_affected {
                         EnumPlayerTarget::All(_) => {
                             let mut index = 0;
-                            let game: ComponentGame = world
+                            let mut game: ComponentGame = world
                                 .read_model(world.dispatcher.contract_address);
 
+                            game.m_state = EnumGameState::WaitingForRent;
                             while index < game.m_players.len() {
                                 let mut player_component: ComponentPlayer = world
                                     .read_model(*game.m_players.at(index));
@@ -334,7 +365,7 @@ mod action_system {
                     world.write_model(@hand);
                     world.write_model(@dealer);
                 },
-                EnumCard::ReplayAttack(_replay_attack_struct) => {},
+                //EnumCard::ReplayAttack(_replay_attack_struct) => {},
                 EnumCard::FrontRun(frontrun_struct) => {
                     let bc_owner = self._get_owner(frontrun_struct.m_blockchain_name);
                     assert!(bc_owner.is_some(), "Blockchain in Frontrun card has no owner");
