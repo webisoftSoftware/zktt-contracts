@@ -49,7 +49,7 @@ mod player_system {
         /// None.
         /// Can Panic?: yes
         fn join(ref self: ContractState, username: ByteArray) -> () {
-            let mut world = self.world_default();
+            let mut world = InternalImpl::world_default(@self);
             let mut game: ComponentGame = world.read_model(world.dispatcher.contract_address);
             assert!(game.m_state != EnumGameState::Started, "Game has already started");
             assert!(game.m_players.len() < 5, "Lobby already full");
@@ -70,7 +70,7 @@ mod player_system {
         /// None.
         /// Can Panic?: yes
         fn leave(ref self: ContractState) -> () {
-            let mut world = self.world_default();
+            let mut world = InternalImpl::world_default(@self);
             let mut game: ComponentGame = world.read_model(world.dispatcher.contract_address);
             assert!(game.m_state == EnumGameState::Started, "Game has not started yet");
             assert!(game.contains_player(@get_caller_address()).is_some(), "Player not found");
@@ -81,6 +81,10 @@ mod player_system {
 
             // Cleanup after player by setting all card owner's to 0.
             game.remove_player(@get_caller_address());
+            if game.m_players.is_empty() {
+                game.m_state = EnumGameState::Ended;
+            }
+
             world.erase_model(@hand);
             world.erase_model(@deck);
             world.erase_model(@deposit);

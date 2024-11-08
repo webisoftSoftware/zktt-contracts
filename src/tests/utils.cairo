@@ -1,8 +1,7 @@
 use zktt::{
     systems::game::{game_system, IGameSystemDispatcher, IGameSystemDispatcherTrait},
     models::components::{
-        ComponentGame, ComponentPlayer, ComponentDealer, ComponentHand, ComponentDeck,
-        ComponentDeposit, m_ComponentGame, m_ComponentPlayer, m_ComponentDealer, m_ComponentDeck,
+        m_ComponentCard, m_ComponentGame, m_ComponentPlayer, m_ComponentDealer, m_ComponentDeck,
         m_ComponentHand, m_ComponentDeposit
     },
     models::enums::{EnumGameState}, models::traits::{IDealer, IPlayer}
@@ -33,6 +32,7 @@ pub fn namespace_def() -> NamespaceDef {
             TestResource::Model(m_ComponentHand::TEST_CLASS_HASH.try_into().unwrap()),
             TestResource::Model(m_ComponentDeck::TEST_CLASS_HASH.try_into().unwrap()),
             TestResource::Model(m_ComponentDeposit::TEST_CLASS_HASH.try_into().unwrap()),
+            TestResource::Model(m_ComponentCard::TEST_CLASS_HASH.try_into().unwrap()),
             TestResource::Contract(game_system::TEST_CLASS_HASH),
             TestResource::Contract(player_system::TEST_CLASS_HASH),
             TestResource::Contract(action_system::TEST_CLASS_HASH)
