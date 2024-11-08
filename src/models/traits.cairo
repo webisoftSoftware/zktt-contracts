@@ -558,7 +558,7 @@ impl EnumCardImpl of IEnumCard {
             EnumCard::PriorityFee(data) => { return *data.m_index; },
             EnumCard::ReplayAttack(data) => { return *data.m_index; },
             EnumCard::FrontRun(data) => { return *data.m_index; },
-            EnumCard::FiftyOnePercentAttack(_) => { return 0; },
+            EnumCard::FiftyOnePercentAttack(_) => { return 1; },
             EnumCard::SandwichAttack(data) => { return *data.m_index; }
         };
     }
