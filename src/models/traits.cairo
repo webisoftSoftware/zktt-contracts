@@ -19,7 +19,8 @@ use zktt::models::enums::{
     EnumCard, EnumBlockchainType, EnumGasFeeType, EnumMoveError, EnumPlayerTarget
 };
 use zktt::models::components::{
-    ComponentDealer, ComponentCard, ComponentDeck, ComponentPlayer, ComponentHand, ComponentGame, ComponentDeposit
+    ComponentDealer, ComponentCard, ComponentDeck, ComponentPlayer, ComponentHand, ComponentGame,
+    ComponentDeposit
 };
 
 /////////////////////////////////////////////////////////////////////////
@@ -824,10 +825,7 @@ impl FrontRunImpl of IFrontRun {
 #[generate_trait]
 impl ComponentCardImpl of ICard {
     fn new(index: u32, card: EnumCard) -> ComponentCard nopanic {
-        return ComponentCard {
-            m_ent_index: index,
-            m_card_info: card
-        };
+        return ComponentCard { m_ent_index: index, m_card_info: card };
     }
 }
 

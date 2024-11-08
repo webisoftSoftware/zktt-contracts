@@ -16,12 +16,12 @@ trait IGameSystem<T> {
 #[dojo::contract]
 mod game_system {
     use zktt::models::components::{
-        ComponentGame, ComponentCard, ComponentHand, ComponentDeck, ComponentDeposit, ComponentPlayer,
-        ComponentDealer
+        ComponentGame, ComponentCard, ComponentHand, ComponentDeck, ComponentDeposit,
+        ComponentPlayer, ComponentDealer
     };
     use zktt::models::traits::{
-        IEnumCard, IPlayer, ICard, IDeck, IDealer, IHand, IGasFee, IAssetGroup, IDraw, IGame, IAsset,
-        IBlockchain, IDeposit, IClaimYield, IFiftyOnePercentAttack, IChainReorg, IFrontRun,
+        IEnumCard, IPlayer, ICard, IDeck, IDealer, IHand, IGasFee, IAssetGroup, IDraw, IGame,
+        IAsset, IBlockchain, IDeposit, IClaimYield, IFiftyOnePercentAttack, IChainReorg, IFrontRun,
         ISandwichAttack, IPriorityFee
     };
     use zktt::models::enums::{
@@ -81,10 +81,12 @@ mod game_system {
             dealer.shuffle(seed);
 
             let mut card_array: Array<EnumCard> = ArrayTrait::new();
-            for card_index in dealer.m_cards.span() {
-                let card_component: ComponentCard = world.read_model(*card_index);
-                card_array.append(card_component.m_card_info);
-            };
+            for card_index in dealer
+                .m_cards
+                .span() {
+                    let card_component: ComponentCard = world.read_model(*card_index);
+                    card_array.append(card_component.m_card_info);
+                };
 
             self._distribute_cards(ref game.m_players, ref card_array);
 
@@ -338,7 +340,9 @@ mod game_system {
         /// Output:
         /// The deck with all copies of all the card types (flattened) [105].
         /// Can Panic?: yes
-        fn _flatten(ref world: dojo::world::WorldStorage, mut container: Array<EnumCard>) -> Array<EnumCard> {
+        fn _flatten(
+            ref world: dojo::world::WorldStorage, mut container: Array<EnumCard>
+        ) -> Array<EnumCard> {
             let mut flattened_array = ArrayTrait::new();
 
             while let Option::Some(mut card) = container.pop_front() {

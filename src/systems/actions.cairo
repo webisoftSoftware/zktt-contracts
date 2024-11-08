@@ -27,8 +27,8 @@ trait IActionSystem<T> {
 mod action_system {
     use super::{EnumCard, EnumGameState, ContractAddress};
     use zktt::models::components::{
-        ComponentGame, ComponentCard,  ComponentHand, ComponentDeck, ComponentDeposit, ComponentPlayer,
-        ComponentDealer
+        ComponentGame, ComponentCard, ComponentHand, ComponentDeck, ComponentDeposit,
+        ComponentPlayer, ComponentDealer
     };
     use zktt::models::traits::{
         IEnumCard, IPlayer, IDeck, IDealer, IHand, IGasFee, IAssetGroup, IDraw, IGame, IAsset,
@@ -388,8 +388,10 @@ mod action_system {
                         .read_model(world.dispatcher.contract_address);
                     assert!(!dealer.m_cards.is_empty(), "Dealer has no more cards");
 
-                    let card_component1: ComponentCard = world.read_model(dealer.pop_card().unwrap());
-                    let card_component2: ComponentCard = world.read_model(dealer.pop_card().unwrap());
+                    let card_component1: ComponentCard = world
+                        .read_model(dealer.pop_card().unwrap());
+                    let card_component2: ComponentCard = world
+                        .read_model(dealer.pop_card().unwrap());
                     hand.add(card_component1.m_card_info);
                     hand.add(card_component2.m_card_info);
                     world.write_model(@hand);
