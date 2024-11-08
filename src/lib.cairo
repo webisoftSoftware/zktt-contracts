@@ -27,6 +27,7 @@ mod tests {
         mod test_game;
         mod test_actions;
         mod test_player;
+        mod test_cards;
     }
     mod unit {}
 }

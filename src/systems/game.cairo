@@ -239,7 +239,7 @@ mod game_system {
                         starknet::contract_address_const::<0x0>(), array![], 5, 1
                     )
                 ),
-                EnumCard::ChainReorg(IChainReorg::new("", "", 3, 3)),
+                EnumCard::ChainReorg(IChainReorg::new("", "", starknet::contract_address_const::<0x0>(), 3, 3)),
                 EnumCard::FrontRun(IFrontRun::new("", 3, 3)),
                 EnumCard::SandwichAttack(ISandwichAttack::new(3, 3)),
                 // EnumCard::ReplayAttack(IReplayAttack::new(1, 2)),
@@ -301,7 +301,7 @@ mod game_system {
                 EnumCard::GasFee(
                     IGasFee::new(
                         EnumPlayerTarget::None,
-                        EnumGasFeeType::Any(EnumBlockchainType::Blue),
+                        EnumGasFeeType::Any(()),
                         array![],
                         3,
                         3

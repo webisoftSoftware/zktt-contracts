@@ -92,6 +92,7 @@ impl ActionFiftyOnePercentAttackEq of PartialEq<ActionFiftyOnePercentAttack> {
 struct ActionChainReorg {
     m_self_blockchain_name: ByteArray,
     m_opponent_blockchain_name: ByteArray,
+    m_opponent_address: ContractAddress,
     m_value: u8,
     m_index: u8
 }
@@ -149,7 +150,6 @@ struct ActionGasFee {
     // First blockchain (target one player), second blockchain (Target all players).
     m_blockchain_type_affected: EnumGasFeeType,
     m_set_applied: Array<StructBlockchain>,
-    m_color_chosen: Option<EnumBlockchainType>,
     m_value: u8,
     m_index: u8
 }
@@ -163,7 +163,7 @@ struct ActionGasFee {
 #[derive(Drop, Serde, Clone, Introspect, Debug)]
 struct ActionFiftyOnePercentAttack {
     m_owner: ContractAddress,
-    m_set: Array<ByteArray>,
+    m_set: Array<StructBlockchain>,
     m_value: u8,
     m_index: u8
 }

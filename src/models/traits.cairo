@@ -41,7 +41,8 @@ impl ComponentDeckDisplay of Display<ComponentDeck> {
             f.buffer.append(@str);
             index += 1;
         };
-
+        let str: ByteArray = format!("\n\tSets: {0}", self.m_sets);
+        f.buffer.append(@str);
         return Result::Ok(());
     }
 }
@@ -67,10 +68,9 @@ impl ComponentHandDisplay of Display<ComponentHand> {
 impl ComponentPlayerDisplay of Display<ComponentPlayer> {
     fn fmt(self: @ComponentPlayer, ref f: Formatter) -> Result<(), Error> {
         let str: ByteArray = format!(
-            "Owner: {0}, Player: {1}, Asset Groups Owned: {2}, Moves remaining: {3}, Score: {4}",
+            "Owner: {0}, Player: {1}, Moves remaining: {2}, Score: {3}",
             starknet::contract_address_to_felt252(*self.m_ent_owner),
             self.m_username,
-            *self.m_sets,
             *self.m_moves_remaining,
             *self.m_score
         );
@@ -241,8 +241,8 @@ impl EnumBlockchainTypeDisplay of Display<EnumBlockchainType> {
 impl EnumGasFeeTypeDisplay of Display<EnumGasFeeType> {
     fn fmt(self: @EnumGasFeeType, ref f: Formatter) -> Result<(), Error> {
         match self {
-            EnumGasFeeType::Any(color) => {
-                let str: ByteArray = format!("Against One: {0}", color);
+            EnumGasFeeType::Any(_) => {
+                let str: ByteArray = format!("Against Any Color");
                 f.buffer.append(@str);
             },
             EnumGasFeeType::AgainstTwo((
@@ -406,7 +406,37 @@ impl DeckImpl of IDeck {
             panic!("{0}", EnumMoveError::CardAlreadyPresent);
         }
 
-        self.m_cards.append(bc);
+        // Add the card first
+        self.m_cards.append(bc.clone());
+
+        // Check for completed sets only if it's a blockchain card
+        match bc {
+            EnumCard::Blockchain(bc_struct) => {
+                // Get all matching blockchains including the newly added one
+                let mut matching_bcs = ArrayTrait::new();
+                let mut index = 0;
+                
+                while index < self.m_cards.len() {
+                    if let Option::Some(card) = self.m_cards.get(index) {
+                        match card.unbox() {
+                            EnumCard::Blockchain(other_bc) => {
+                                if other_bc.m_bc_type == @bc_struct.m_bc_type {
+                                    matching_bcs.append(other_bc.clone());
+                                }
+                            },
+                            _ => {}
+                        }
+                    }
+                    index += 1;
+                };
+
+                // Check if we have a complete set
+                if self.check_complete_set(matching_bcs, @bc_struct.m_bc_type) {
+                    self.m_sets += 1;
+                }
+            },
+            _ => {}
+        }
     }
 
     fn contains(self: @ComponentDeck, bc_name: @ByteArray) -> Option<usize> {
@@ -421,6 +451,7 @@ impl DeckImpl of IDeck {
                     break;
                 }
             }
+            index += 1;
         };
         return found;
     }
@@ -446,18 +477,54 @@ impl DeckImpl of IDeck {
 
     fn remove(ref self: ComponentDeck, card_name: @ByteArray) -> () {
         if let Option::Some(index_found) = self.contains(card_name) {
-            let mut new_array = ArrayTrait::new();
+            // Check if this card is part of a complete set before removing it
+            let card_to_remove = self.m_cards.at(index_found);
+            let mut was_part_of_set = false;
+            
+            // Only check sets if it's a blockchain card
+            match card_to_remove {
+                EnumCard::Blockchain(bc_struct) => {
+                    // Get all matching blockchains before removal
+                    let mut matching_bcs = ArrayTrait::new();
+                    let mut index = 0;
+                    
+                    while index < self.m_cards.len() {
+                        if let Option::Some(card) = self.m_cards.get(index) {
+                            match card.unbox() {
+                                EnumCard::Blockchain(other_bc) => {
+                                    if other_bc.m_bc_type == bc_struct.m_bc_type {
+                                        matching_bcs.append(other_bc.clone());
+                                    }
+                                },
+                                _ => {}
+                            }
+                        }
+                        index += 1;
+                    };
 
+                    // Check if these cards formed a complete set
+                    was_part_of_set = self.check_complete_set(matching_bcs, bc_struct.m_bc_type);
+                },
+                _ => {}
+            };
+
+            // Remove the card
+            let mut new_array = ArrayTrait::new();
             let mut index = 0;
             while let Option::Some(card) = self.m_cards.pop_front() {
                 if index == index_found {
                     index += 1;
                     continue;
                 }
-
                 new_array.append(card);
                 index += 1;
             };
+            self.m_cards = new_array;
+
+            // If card was part of a complete set, decrement the set counter
+            if was_part_of_set {
+                self.m_sets -= 1;
+            }
         }
     }
 
@@ -483,7 +550,7 @@ impl DeckImpl of IDeck {
             index += 1;
         };
 
-        if self.check_complete_set(asset_group_array.span(), bc.m_bc_type) {
+        if self.check_complete_set(asset_group_array.clone(), bc.m_bc_type) {
             asset_group = Option::Some(asset_group_array);
         }
         return asset_group;
@@ -491,30 +558,17 @@ impl DeckImpl of IDeck {
 
     fn check_complete_set(
         self: @ComponentDeck,
-        asset_group_array: Span<StructBlockchain>,
+        asset_group_array: Array<StructBlockchain>,
         bc_type: @EnumBlockchainType
     ) -> bool {
-        return match bc_type {
+        let required_count = match bc_type {
             EnumBlockchainType::Blue(_) | EnumBlockchainType::DarkBlue(_) |
-            EnumBlockchainType::Gold(_) => {
-                if asset_group_array.len() == 2 {
-                    return true;
-                }
-                return false;
-            },
-            EnumBlockchainType::LightBlue(_) => {
-                if asset_group_array.len() == 4 {
-                    return true;
-                }
-                return false;
-            },
-            _ => {
-                if asset_group_array.len() == 3 {
-                    return true;
-                }
-                return false;
-            }
+            EnumBlockchainType::Gold(_) => 2,
+            EnumBlockchainType::LightBlue(_) => 4,
+            _ => 3
         };
+
+        return asset_group_array.len() == required_count;
     }
 }
 
@@ -716,7 +770,6 @@ impl GasFeeImpl of IGasFee {
             m_players_affected: players_affected,
             m_set_applied: set_applied,
             m_blockchain_type_affected: bc_affected,
-            m_color_chosen: Option::None,
             m_value: value,
             m_index: copies_left
         };
@@ -744,7 +797,7 @@ impl SandwichAttackImpl of ISandwichAttack {
 #[generate_trait]
 impl FiftyOnePercentAttackImpl of IFiftyOnePercentAttack {
     fn new(
-        owner: ContractAddress, set: Array<ByteArray>, value: u8, copies_left: u8
+        owner: ContractAddress, set: Array<StructBlockchain>, value: u8, copies_left: u8
     ) -> ActionFiftyOnePercentAttack nopanic {
         return ActionFiftyOnePercentAttack {
             m_owner: owner, m_set: set, m_value: value, m_index: copies_left
@@ -773,12 +826,14 @@ impl ChainReorgImpl of IChainReorg {
     fn new(
         self_blockchain_name: ByteArray,
         opponent_blockchain_name: ByteArray,
+        opponent_address: ContractAddress,
         value: u8,
         copies_left: u8
     ) -> ActionChainReorg nopanic {
         return ActionChainReorg {
             m_self_blockchain_name: self_blockchain_name,
             m_opponent_blockchain_name: opponent_blockchain_name,
+            m_opponent_address: opponent_address,
             m_value: value,
             m_index: copies_left
         };
@@ -892,7 +947,6 @@ impl PlayerImpl of IPlayer {
             m_username: username,
             m_moves_remaining: 3,
             m_score: 0,
-            m_sets: 0,
             m_has_drawn: false,
             m_in_debt: Option::None
         };

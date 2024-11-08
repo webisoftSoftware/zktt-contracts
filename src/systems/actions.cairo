@@ -9,7 +9,7 @@
 
 // TODO: Fix MajorityAttack references Nami
 use starknet::ContractAddress;
-use zktt::models::enums::{EnumCard, EnumGameState, EnumGasFeeType, EnumPlayerTarget};
+use zktt::models::enums::{EnumCard, EnumGameState, EnumGasFeeType, EnumPlayerTarget, EnumBlockchainType};
 
 
 #[starknet::interface]
@@ -33,7 +33,7 @@ mod action_system {
         IEnumCard, IPlayer, IDeck, IDealer, IHand, IGasFee, IAssetGroup, IDraw, IGame, IAsset,
         IBlockchain, IDeposit
     };
-    use zktt::models::enums::{EnumGasFeeType, EnumPlayerTarget};
+    use zktt::models::enums::{EnumGasFeeType, EnumPlayerTarget, EnumBlockchainType};
     use dojo::world::IWorldDispatcher;
     use starknet::get_caller_address;
     use dojo::model::ModelStorage;
@@ -278,9 +278,31 @@ mod action_system {
                     deck.add(EnumCard::Blockchain(blockchain_struct.clone()));
                     world.write_model(@deck);
                 },
+                // ... existing code ...
                 EnumCard::ChainReorg(chain_reorg_struct) => {
-                    deck.add(EnumCard::ChainReorg(chain_reorg_struct.clone()));
-                    world.write_model(@deck);
+                    let mut opponent_deck: ComponentDeck = world
+                        .read_model(*chain_reorg_struct.m_opponent_address);
+                    
+                    // First find and remove opponent's blockchain
+                    if let Option::Some(opp_index) = opponent_deck
+                        .contains(chain_reorg_struct.m_opponent_blockchain_name) {
+                        let opp_bc = opponent_deck.m_cards.at(opp_index).clone();
+                        opponent_deck.remove(chain_reorg_struct.m_opponent_blockchain_name);
+                        
+                        // Then find and remove self blockchain
+                        if let Option::Some(self_index) = deck
+                            .contains(chain_reorg_struct.m_self_blockchain_name) {
+                            let self_bc = deck.m_cards.at(self_index).clone();
+                            deck.remove(chain_reorg_struct.m_self_blockchain_name);
+                            
+                            // Finally add each blockchain to the other player's deck
+                            deck.add(opp_bc);
+                            opponent_deck.add(self_bc);
+                            
+                            world.write_model(@deck);
+                            world.write_model(@opponent_deck);
+                        }
+                    }
                 },
                 EnumCard::ClaimYield(_claim_yield_struct) => {
                     let mut game: ComponentGame = world
@@ -309,36 +331,35 @@ mod action_system {
                     world.write_model(@game);
                 },
                 EnumCard::GasFee(gas_fee_struct) => {
-                    assert!(
-                        gas_fee_struct.m_color_chosen.is_some(),
-                        "Invalid Gas Fee move: No color specified"
-                    );
                     match gas_fee_struct.m_blockchain_type_affected {
-                        EnumGasFeeType::Any(color) => {
-                            if color != @(*gas_fee_struct.m_color_chosen).unwrap() {
-                                panic!("Invalid Gas Fee move: Color does not match allowed colors");
-                            }
-                        },
+                        EnumGasFeeType::Any(_) => {},
                         EnumGasFeeType::AgainstTwo((
                             color1, color2
                         )) => {
-                            if color1 != @(*gas_fee_struct.m_color_chosen).unwrap()
-                                && color2 != @(*gas_fee_struct.m_color_chosen).unwrap() {
-                                panic!("Invalid Gas Fee move: Color does not match allowed colors");
+                            let mut color_found: bool = false;
+                            let mut index: usize = 0;
+                            while index < gas_fee_struct.m_set_applied.len() {
+                                let blockchain = gas_fee_struct.m_set_applied.at(index);
+                                if blockchain.m_bc_type == color1 || blockchain.m_bc_type == color2 {
+                                    color_found = true;
+                                }
+                                index += 1;
+                            };
+                            if !color_found {
+                                return ();
                             }
                         }
                     };
 
                     let fee: u8 = gas_fee_struct.get_fee();
-
+                    let mut game: ComponentGame = world
+                        .read_model(world.dispatcher.contract_address);
+                    game.m_state = EnumGameState::WaitingForRent;
                     // Make every affected player in debt for their next turn.
                     match gas_fee_struct.m_players_affected {
                         EnumPlayerTarget::All(_) => {
                             let mut index = 0;
-                            let mut game: ComponentGame = world
-                                .read_model(world.dispatcher.contract_address);
 
-                            game.m_state = EnumGameState::WaitingForRent;
                             while index < game.m_players.len() {
                                 let mut player_component: ComponentPlayer = world
                                     .read_model(*game.m_players.at(index));
@@ -354,6 +375,7 @@ mod action_system {
                         },
                         _ => panic!("Invalid Gas Fee move: No players targeted")
                     };
+                    world.write_model(@game);
                 },
                 EnumCard::PriorityFee(_priority_fee_struct) => {
                     let mut dealer: ComponentDealer = world
@@ -385,23 +407,35 @@ mod action_system {
                 EnumCard::FiftyOnePercentAttack(asset_group_struct) => {
                     let mut opponent_deck: ComponentDeck = world
                         .read_model(*asset_group_struct.m_owner);
-                    let mut player: ComponentPlayer = world.read_model(*caller);
-                    let mut opponent_player: ComponentPlayer = world
-                        .read_model(*asset_group_struct.m_owner);
 
-                    player.m_sets += 1;
-                    opponent_player.m_sets -= 1;
-
+                    // Verify opponent has sets to steal
+                    assert!(opponent_deck.m_sets > 0, "Opponent has no sets");
+                    
+                    // Get all matching blockchains of the target type
                     let mut index: usize = 0;
-                    while let Option::Some(bc_name) = asset_group_struct.m_set.get(index) {
-                        if let Option::Some(blockchain_index) = opponent_deck
-                            .contains(bc_name.unbox()) {
-                            deck.add(opponent_deck.m_cards.at(blockchain_index).clone());
-                            opponent_deck.remove(bc_name.unbox());
+                    let target_type = asset_group_struct.m_set.at(0).m_bc_type;
+                    let mut blockchains_to_steal = ArrayTrait::new();
+                    
+                    // First collect all matching blockchains
+                    while index < opponent_deck.m_cards.len() {
+                        let bc = opponent_deck.m_cards.at(index);
+                        match bc {
+                            EnumCard::Blockchain(bc_struct) => {
+                                if bc_struct.m_bc_type == target_type {
+                                    blockchains_to_steal.append(bc.clone());
+                                }
+                            },
+                            _ => {}
                         }
                         index += 1;
                     };
-                    world.write_model(@player);
+
+                    // Then move all collected blockchains from opponent to self
+                    while let Option::Some(bc) = blockchains_to_steal.pop_front() {
+                        deck.add(bc.clone());
+                        opponent_deck.remove(@bc.get_name());
+                    };
+                    
                     world.write_model(@deck);
                     world.write_model(@opponent_deck);
                 },
