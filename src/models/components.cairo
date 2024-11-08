@@ -76,7 +76,8 @@ pub struct ComponentDealer {
 pub struct ComponentDeck {
     #[key]
     pub m_ent_owner: ContractAddress,
-    pub m_cards: Array<EnumCard>
+    pub m_cards: Array<EnumCard>,
+    pub m_sets: u8
 }
 
 /// Component that represents the pile of assets that each player owns in the game.
@@ -114,7 +115,6 @@ pub struct ComponentPlayer {
     pub m_username: ByteArray,
     pub m_moves_remaining: u8,
     pub m_score: u32,
-    pub m_sets: u8,
     pub m_has_drawn: bool,
     pub m_in_debt: Option<u8>
 }

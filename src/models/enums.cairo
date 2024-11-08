@@ -57,7 +57,7 @@ pub enum EnumPlayerTarget {
 
 #[derive(Drop, Copy, Serde, PartialEq, Introspect, Debug)]
 pub enum EnumGasFeeType {
-    Any: EnumBlockchainType,
+    Any: (),
     AgainstTwo: (EnumBlockchainType, EnumBlockchainType),
 }
 

@@ -242,8 +242,7 @@ fn test_claim_yield_and_pay_fee() {
 
     // Setup payment cards for player 2
     let payment_cards: Array<EnumCard> = array![
-        EnumCard::Asset(IAsset::new("ETH [1]", 1, 1)), 
-        EnumCard::Asset(IAsset::new("ETH [1]", 1, 1))
+        EnumCard::Asset(IAsset::new("ETH [1]", 1, 1)), EnumCard::Asset(IAsset::new("ETH [1]", 1, 1))
     ];
     let mut player2_deposit: ComponentDeposit = world.read_model(second_caller);
     player2_deposit.m_cards = payment_cards.clone();
@@ -261,10 +260,7 @@ fn test_claim_yield_and_pay_fee() {
 
     // Verify creditor received payment
     let creditor_deposit_after: ComponentDeposit = world.read_model(first_caller);
-    assert!(
-        creditor_deposit_after.m_total_value ==  2,
-        "Creditor should receive payment"
-    );
+    assert!(creditor_deposit_after.m_total_value == 2, "Creditor should receive payment");
 
     // Verify debtor's deposit decreased
     let debtor_deposit_after: ComponentDeposit = world.read_model(second_caller);
