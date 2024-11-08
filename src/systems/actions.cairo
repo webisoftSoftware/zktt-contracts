@@ -9,7 +9,9 @@
 
 // TODO: Fix MajorityAttack references Nami
 use starknet::ContractAddress;
-use zktt::models::enums::{EnumCard, EnumGameState, EnumGasFeeType, EnumPlayerTarget, EnumBlockchainType};
+use zktt::models::enums::{
+    EnumCard, EnumGameState, EnumGasFeeType, EnumPlayerTarget, EnumBlockchainType
+};
 
 
 #[starknet::interface]
@@ -282,23 +284,23 @@ mod action_system {
                 EnumCard::ChainReorg(chain_reorg_struct) => {
                     let mut opponent_deck: ComponentDeck = world
                         .read_model(*chain_reorg_struct.m_opponent_address);
-                    
+
                     // First find and remove opponent's blockchain
                     if let Option::Some(opp_index) = opponent_deck
                         .contains(chain_reorg_struct.m_opponent_blockchain_name) {
                         let opp_bc = opponent_deck.m_cards.at(opp_index).clone();
                         opponent_deck.remove(chain_reorg_struct.m_opponent_blockchain_name);
-                        
+
                         // Then find and remove self blockchain
                         if let Option::Some(self_index) = deck
                             .contains(chain_reorg_struct.m_self_blockchain_name) {
                             let self_bc = deck.m_cards.at(self_index).clone();
                             deck.remove(chain_reorg_struct.m_self_blockchain_name);
-                            
+
                             // Finally add each blockchain to the other player's deck
                             deck.add(opp_bc);
                             opponent_deck.add(self_bc);
-                            
+
                             world.write_model(@deck);
                             world.write_model(@opponent_deck);
                         }
@@ -340,7 +342,8 @@ mod action_system {
                             let mut index: usize = 0;
                             while index < gas_fee_struct.m_set_applied.len() {
                                 let blockchain = gas_fee_struct.m_set_applied.at(index);
-                                if blockchain.m_bc_type == color1 || blockchain.m_bc_type == color2 {
+                                if blockchain.m_bc_type == color1
+                                    || blockchain.m_bc_type == color2 {
                                     color_found = true;
                                 }
                                 index += 1;
@@ -410,12 +413,12 @@ mod action_system {
 
                     // Verify opponent has sets to steal
                     assert!(opponent_deck.m_sets > 0, "Opponent has no sets");
-                    
+
                     // Get all matching blockchains of the target type
                     let mut index: usize = 0;
                     let target_type = asset_group_struct.m_set.at(0).m_bc_type;
                     let mut blockchains_to_steal = ArrayTrait::new();
-                    
+
                     // First collect all matching blockchains
                     while index < opponent_deck.m_cards.len() {
                         let bc = opponent_deck.m_cards.at(index);
@@ -435,7 +438,7 @@ mod action_system {
                         deck.add(bc.clone());
                         opponent_deck.remove(@bc.get_name());
                     };
-                    
+
                     world.write_model(@deck);
                     world.write_model(@opponent_deck);
                 },

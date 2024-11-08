@@ -415,7 +415,7 @@ impl DeckImpl of IDeck {
                 // Get all matching blockchains including the newly added one
                 let mut matching_bcs = ArrayTrait::new();
                 let mut index = 0;
-                
+
                 while index < self.m_cards.len() {
                     if let Option::Some(card) = self.m_cards.get(index) {
                         match card.unbox() {
@@ -480,14 +480,14 @@ impl DeckImpl of IDeck {
             // Check if this card is part of a complete set before removing it
             let card_to_remove = self.m_cards.at(index_found);
             let mut was_part_of_set = false;
-            
+
             // Only check sets if it's a blockchain card
             match card_to_remove {
                 EnumCard::Blockchain(bc_struct) => {
                     // Get all matching blockchains before removal
                     let mut matching_bcs = ArrayTrait::new();
                     let mut index = 0;
-                    
+
                     while index < self.m_cards.len() {
                         if let Option::Some(card) = self.m_cards.get(index) {
                             match card.unbox() {

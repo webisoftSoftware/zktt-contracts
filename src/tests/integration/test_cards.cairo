@@ -21,13 +21,15 @@
 
 use starknet::ContractAddress;
 use crate::models::structs::StructBlockchain;
-use crate::models::enums::{EnumCard, EnumGameState, EnumBlockchainType, EnumGasFeeType, EnumPlayerTarget};
+use crate::models::enums::{
+    EnumCard, EnumGameState, EnumBlockchainType, EnumGasFeeType, EnumPlayerTarget
+};
 use crate::models::components::{
     ComponentGame, ComponentHand, ComponentDeposit, ComponentPlayer, ComponentDeck, ComponentDealer
 };
 use crate::models::traits::{
-    IAsset, IBlockchain, IClaimYield, ISandwichAttack, IGasFee, IPriorityFee, 
-    IFrontRun, IFiftyOnePercentAttack, IChainReorg, IHand, IDeck, ComponentDeckDisplay
+    IAsset, IBlockchain, IClaimYield, ISandwichAttack, IGasFee, IPriorityFee, IFrontRun,
+    IFiftyOnePercentAttack, IChainReorg, IHand, IDeck, ComponentDeckDisplay
 };
 use crate::tests::utils::namespace_def;
 use crate::tests::integration::test_game::deploy_game;
@@ -60,7 +62,7 @@ fn test_asset_card() {
 
     // Set player one as the next caller
     starknet::testing::set_contract_address(first_caller);
-    
+
     // Draw cards first
     action_system.draw(false);
 
@@ -144,7 +146,7 @@ fn test_claim_yield_card() {
     // Verify effects
     let game: ComponentGame = world.read_model(world.dispatcher.contract_address);
     assert!(game.m_state == EnumGameState::WaitingForRent, "Game should be waiting for rent");
-    
+
     let player2: ComponentPlayer = world.read_model(second_caller);
     assert!(player2.m_in_debt == Option::Some(2), "Player 2 should be in debt for 2 ETH");
 }
@@ -179,7 +181,7 @@ fn test_sandwich_attack_card() {
     // Verify effects
     let game: ComponentGame = world.read_model(world.dispatcher.contract_address);
     assert!(game.m_state == EnumGameState::WaitingForRent, "Game should be waiting for rent");
-    
+
     let player2: ComponentPlayer = world.read_model(second_caller);
     assert!(player2.m_in_debt == Option::Some(5), "Player 2 should be in debt for 5 ETH");
 }
@@ -210,17 +212,19 @@ fn test_gas_fee_card() {
         IGasFee::new(
             EnumPlayerTarget::All,
             EnumGasFeeType::Any,
-            array![StructBlockchain {
-                m_name: "Ethereum",
-                m_bc_type: EnumBlockchainType::DarkBlue,
-                m_fee: 3,
-                m_value: 4
-            }],
+            array![
+                StructBlockchain {
+                    m_name: "Ethereum",
+                    m_bc_type: EnumBlockchainType::DarkBlue,
+                    m_fee: 3,
+                    m_value: 4
+                }
+            ],
             3,
             3
         )
     );
-    
+
     hand.add(gas_fee_card.clone());
     world.write_model_test(@hand);
 
@@ -264,7 +268,7 @@ fn test_priority_fee_card() {
     // Verify player drew 2 additional cards
     let hand_after: ComponentHand = world.read_model(first_caller);
     assert!(
-        hand_after.m_cards.len() == initial_hand_size + 1, 
+        hand_after.m_cards.len() == initial_hand_size + 1,
         "Player should have drawn 2 additional cards"
     );
 }
@@ -360,14 +364,8 @@ fn test_chain_reorg_card() {
     // Verify blockchains were swapped
     let player1_deck_after: ComponentDeck = world.read_model(first_caller);
     let player2_deck_after: ComponentDeck = world.read_model(second_caller);
-    assert!(
-        player1_deck_after.contains(@"Bitcoin").is_some(),
-        "Player 1 should have Bitcoin"
-    );
-    assert!(
-        player2_deck_after.contains(@"Ethereum").is_some(),
-        "Player 2 should have Ethereum"
-    );
+    assert!(player1_deck_after.contains(@"Bitcoin").is_some(), "Player 1 should have Bitcoin");
+    assert!(player2_deck_after.contains(@"Ethereum").is_some(), "Player 2 should have Ethereum");
 }
 
 #[test]
@@ -393,12 +391,14 @@ fn test_fifty_one_percent_attack_card() {
     ];
 
     let mut player2_deck: ComponentDeck = world.read_model(second_caller);
-    player2_deck.add(
-        EnumCard::Blockchain(IBlockchain::new("Ethereum", EnumBlockchainType::DarkBlue, 3, 4))
-    );
-    player2_deck.add(
-        EnumCard::Blockchain(IBlockchain::new("Starknet", EnumBlockchainType::DarkBlue, 3, 4))
-    );
+    player2_deck
+        .add(
+            EnumCard::Blockchain(IBlockchain::new("Ethereum", EnumBlockchainType::DarkBlue, 3, 4))
+        );
+    player2_deck
+        .add(
+            EnumCard::Blockchain(IBlockchain::new("Starknet", EnumBlockchainType::DarkBlue, 3, 4))
+        );
     world.write_model_test(@player2_deck);
 
     // Set player one as the next caller and draw cards first

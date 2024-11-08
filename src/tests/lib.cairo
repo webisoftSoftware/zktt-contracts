@@ -5,4 +5,4 @@ mod integration {
     mod test_actions;
     mod test_player;
     mod test_cards;
-};
+}
