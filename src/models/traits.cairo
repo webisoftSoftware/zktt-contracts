@@ -19,7 +19,8 @@ use zktt::models::enums::{
     EnumCard, EnumBlockchainType, EnumGasFeeType, EnumMoveError, EnumPlayerTarget
 };
 use zktt::models::components::{
-    ComponentDealer, ComponentDeck, ComponentPlayer, ComponentHand, ComponentGame, ComponentDeposit
+    ComponentDealer, ComponentCard, ComponentDeck, ComponentPlayer, ComponentHand, ComponentGame,
+    ComponentDeposit
 };
 
 /////////////////////////////////////////////////////////////////////////
@@ -371,12 +372,12 @@ impl StructPriorityFeeImpl of IDraw {
 
 #[generate_trait]
 impl DealerImpl of IDealer {
-    fn new(owner: ContractAddress, cards: Array<EnumCard>) -> ComponentDealer nopanic {
+    fn new(owner: ContractAddress, cards: Array<u32>) -> ComponentDealer nopanic {
         return ComponentDealer { m_ent_owner: owner, m_cards: cards };
     }
 
     fn shuffle(ref self: ComponentDealer, seed: felt252) -> () {
-        let mut shuffled_cards: Array<EnumCard> = ArrayTrait::new();
+        let mut shuffled_cards: Array<u32> = ArrayTrait::new();
         let mut deck = DeckTrait::new(seed, self.m_cards.len());
 
         while deck.remaining > 0 {
@@ -390,7 +391,7 @@ impl DealerImpl of IDealer {
         self.m_cards = shuffled_cards;
     }
 
-    fn pop_card(ref self: ComponentDealer) -> Option<EnumCard> {
+    fn pop_card(ref self: ComponentDealer) -> Option<u32> {
         if self.m_cards.is_empty() {
             return Option::None;
         }
@@ -818,6 +819,13 @@ impl FrontRunImpl of IFrontRun {
         return ActionFrontrun {
             m_blockchain_name: blockchain_name, m_value: value, m_index: copies_left
         };
+    }
+}
+
+#[generate_trait]
+impl ComponentCardImpl of ICard {
+    fn new(index: u32, card: EnumCard) -> ComponentCard nopanic {
+        return ComponentCard { m_ent_index: index, m_card_info: card };
     }
 }
 

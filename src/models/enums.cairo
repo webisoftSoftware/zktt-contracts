@@ -38,6 +38,7 @@ pub enum EnumGameState {
     WaitingForPlayers: (),
     WaitingForRent: (),
     Started: (),
+    Ended: ()
 }
 
 #[derive(Drop, Copy, Serde, PartialEq, Introspect, Debug)]

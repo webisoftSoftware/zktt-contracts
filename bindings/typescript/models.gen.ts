@@ -1,5 +1,59 @@
 import type { SchemaType } from "@dojoengine/sdk";
 
+// Type definition for `zktt::models::structs::ActionReplayAttack` struct
+export interface ActionReplayAttack {
+	fieldOrder: string[];
+	m_value: number;
+	m_index: number;
+}
+
+// Type definition for `zktt::models::components::ComponentCardValue` struct
+export interface ComponentCardValue {
+	fieldOrder: string[];
+	m_card_info: EnumCard;
+}
+
+// Type definition for `zktt::models::components::ComponentCard` struct
+export interface ComponentCard {
+	fieldOrder: string[];
+	m_ent_index: number;
+	m_card_info: EnumCard;
+}
+
+// Type definition for `zktt::models::structs::ActionFrontrun` struct
+export interface ActionFrontrun {
+	fieldOrder: string[];
+	m_blockchain_name: string;
+	m_value: number;
+	m_index: number;
+}
+
+// Type definition for `zktt::models::structs::ActionFiftyOnePercentAttack` struct
+export interface ActionFiftyOnePercentAttack {
+	fieldOrder: string[];
+	m_owner: string;
+	m_set: Array<StructBlockchain>;
+	m_value: number;
+	m_index: number;
+}
+
+// Type definition for `zktt::models::structs::ActionClaimYield` struct
+export interface ActionClaimYield {
+	fieldOrder: string[];
+	m_value: number;
+	m_index: number;
+}
+
+// Type definition for `zktt::models::structs::ActionGasFee` struct
+export interface ActionGasFee {
+	fieldOrder: string[];
+	m_players_affected: EnumPlayerTarget;
+	m_blockchain_type_affected: EnumGasFeeType;
+	m_set_applied: Array<StructBlockchain>;
+	m_value: number;
+	m_index: number;
+}
+
 // Type definition for `zktt::models::structs::ActionChainReorg` struct
 export interface ActionChainReorg {
 	fieldOrder: string[];
@@ -10,35 +64,33 @@ export interface ActionChainReorg {
 	m_index: number;
 }
 
-// Type definition for `zktt::models::structs::ActionReplayAttack` struct
-export interface ActionReplayAttack {
+// Type definition for `zktt::models::structs::ActionPriorityFee` struct
+export interface ActionPriorityFee {
 	fieldOrder: string[];
 	m_value: number;
 	m_index: number;
 }
 
-// Type definition for `zktt::models::structs::ActionClaimYield` struct
-export interface ActionClaimYield {
+// Type definition for `zktt::models::structs::StructAsset` struct
+export interface StructAsset {
 	fieldOrder: string[];
+	m_name: string;
 	m_value: number;
 	m_index: number;
 }
 
-// Type definition for `zktt::models::structs::ActionGasFee` struct
-export interface ActionGasFee {
+// Type definition for `zktt::models::structs::StructBlockchain` struct
+export interface StructBlockchain {
 	fieldOrder: string[];
-	m_players_affected: EnumPlayerTarget;
-	m_blockchain_type_affected: EnumGasFeeType;
-	m_set_applied: Array<StructBlockchain>;
+	m_name: string;
+	m_bc_type: EnumBlockchainType;
+	m_fee: number;
 	m_value: number;
-	m_index: number;
 }
 
-// Type definition for `zktt::models::structs::ActionFiftyOnePercentAttack` struct
-export interface ActionFiftyOnePercentAttack {
+// Type definition for `zktt::models::structs::ActionSandwichAttack` struct
+export interface ActionSandwichAttack {
 	fieldOrder: string[];
-	m_owner: string;
-	m_set: Array<StructBlockchain>;
 	m_value: number;
 	m_index: number;
 }
@@ -47,27 +99,13 @@ export interface ActionFiftyOnePercentAttack {
 export interface ComponentDealer {
 	fieldOrder: string[];
 	m_ent_owner: string;
-	m_cards: Array<EnumCard>;
+	m_cards: Array<number>;
 }
 
 // Type definition for `zktt::models::components::ComponentDealerValue` struct
 export interface ComponentDealerValue {
 	fieldOrder: string[];
-	m_cards: Array<EnumCard>;
-}
-
-// Type definition for `zktt::models::structs::ActionSandwichAttack` struct
-export interface ActionSandwichAttack {
-	fieldOrder: string[];
-	m_value: number;
-	m_index: number;
-}
-
-// Type definition for `zktt::models::structs::ActionPriorityFee` struct
-export interface ActionPriorityFee {
-	fieldOrder: string[];
-	m_value: number;
-	m_index: number;
+	m_cards: Array<number>;
 }
 
 // Type definition for `zktt::models::structs::StructAsset` struct
@@ -76,101 +114,11 @@ export interface StructAsset {
 	m_name: string;
 	m_value: number;
 	m_index: number;
-}
-
-// Type definition for `zktt::models::structs::StructBlockchain` struct
-export interface StructBlockchain {
-	fieldOrder: string[];
-	m_name: string;
-	m_bc_type: EnumBlockchainType;
-	m_fee: number;
-	m_value: number;
-}
-
-// Type definition for `zktt::models::structs::ActionFrontrun` struct
-export interface ActionFrontrun {
-	fieldOrder: string[];
-	m_blockchain_name: string;
-	m_value: number;
-	m_index: number;
-}
-
-// Type definition for `zktt::models::components::ComponentDeck` struct
-export interface ComponentDeck {
-	fieldOrder: string[];
-	m_ent_owner: string;
-	m_cards: Array<EnumCard>;
-	m_sets: number;
 }
 
 // Type definition for `zktt::models::structs::ActionClaimYield` struct
 export interface ActionClaimYield {
 	fieldOrder: string[];
-	m_value: number;
-	m_index: number;
-}
-
-// Type definition for `zktt::models::structs::StructBlockchain` struct
-export interface StructBlockchain {
-	fieldOrder: string[];
-	m_name: string;
-	m_bc_type: EnumBlockchainType;
-	m_fee: number;
-	m_value: number;
-}
-
-// Type definition for `zktt::models::structs::ActionReplayAttack` struct
-export interface ActionReplayAttack {
-	fieldOrder: string[];
-	m_value: number;
-	m_index: number;
-}
-
-// Type definition for `zktt::models::structs::ActionFiftyOnePercentAttack` struct
-export interface ActionFiftyOnePercentAttack {
-	fieldOrder: string[];
-	m_owner: string;
-	m_set: Array<StructBlockchain>;
-	m_value: number;
-	m_index: number;
-}
-
-// Type definition for `zktt::models::structs::ActionPriorityFee` struct
-export interface ActionPriorityFee {
-	fieldOrder: string[];
-	m_value: number;
-	m_index: number;
-}
-
-// Type definition for `zktt::models::structs::ActionGasFee` struct
-export interface ActionGasFee {
-	fieldOrder: string[];
-	m_players_affected: EnumPlayerTarget;
-	m_blockchain_type_affected: EnumGasFeeType;
-	m_set_applied: Array<StructBlockchain>;
-	m_value: number;
-	m_index: number;
-}
-
-// Type definition for `zktt::models::structs::ActionSandwichAttack` struct
-export interface ActionSandwichAttack {
-	fieldOrder: string[];
-	m_value: number;
-	m_index: number;
-}
-
-// Type definition for `zktt::models::structs::StructAsset` struct
-export interface StructAsset {
-	fieldOrder: string[];
-	m_name: string;
-	m_value: number;
-	m_index: number;
-}
-
-// Type definition for `zktt::models::structs::ActionFrontrun` struct
-export interface ActionFrontrun {
-	fieldOrder: string[];
-	m_blockchain_name: string;
 	m_value: number;
 	m_index: number;
 }
@@ -192,6 +140,30 @@ export interface ActionChainReorg {
 	m_index: number;
 }
 
+// Type definition for `zktt::models::components::ComponentDeck` struct
+export interface ComponentDeck {
+	fieldOrder: string[];
+	m_ent_owner: string;
+	m_cards: Array<EnumCard>;
+	m_sets: number;
+}
+
+// Type definition for `zktt::models::structs::StructBlockchain` struct
+export interface StructBlockchain {
+	fieldOrder: string[];
+	m_name: string;
+	m_bc_type: EnumBlockchainType;
+	m_fee: number;
+	m_value: number;
+}
+
+// Type definition for `zktt::models::structs::ActionPriorityFee` struct
+export interface ActionPriorityFee {
+	fieldOrder: string[];
+	m_value: number;
+	m_index: number;
+}
+
 // Type definition for `zktt::models::structs::ActionFrontrun` struct
 export interface ActionFrontrun {
 	fieldOrder: string[];
@@ -200,10 +172,18 @@ export interface ActionFrontrun {
 	m_index: number;
 }
 
-// Type definition for `zktt::models::structs::StructAsset` struct
-export interface StructAsset {
+// Type definition for `zktt::models::structs::ActionReplayAttack` struct
+export interface ActionReplayAttack {
 	fieldOrder: string[];
-	m_name: string;
+	m_value: number;
+	m_index: number;
+}
+
+// Type definition for `zktt::models::structs::ActionFiftyOnePercentAttack` struct
+export interface ActionFiftyOnePercentAttack {
+	fieldOrder: string[];
+	m_owner: string;
+	m_set: Array<StructBlockchain>;
 	m_value: number;
 	m_index: number;
 }
@@ -214,6 +194,45 @@ export interface ActionGasFee {
 	m_players_affected: EnumPlayerTarget;
 	m_blockchain_type_affected: EnumGasFeeType;
 	m_set_applied: Array<StructBlockchain>;
+	m_value: number;
+	m_index: number;
+}
+
+// Type definition for `zktt::models::structs::ActionSandwichAttack` struct
+export interface ActionSandwichAttack {
+	fieldOrder: string[];
+	m_value: number;
+	m_index: number;
+}
+
+// Type definition for `zktt::models::structs::ActionChainReorg` struct
+export interface ActionChainReorg {
+	fieldOrder: string[];
+	m_self_blockchain_name: string;
+	m_opponent_blockchain_name: string;
+	m_opponent_address: string;
+	m_value: number;
+	m_index: number;
+}
+
+// Type definition for `zktt::models::structs::ActionClaimYield` struct
+export interface ActionClaimYield {
+	fieldOrder: string[];
+	m_value: number;
+	m_index: number;
+}
+
+// Type definition for `zktt::models::structs::ActionFrontrun` struct
+export interface ActionFrontrun {
+	fieldOrder: string[];
+	m_blockchain_name: string;
+	m_value: number;
+	m_index: number;
+}
+
+// Type definition for `zktt::models::structs::ActionReplayAttack` struct
+export interface ActionReplayAttack {
+	fieldOrder: string[];
 	m_value: number;
 	m_index: number;
 }
@@ -233,89 +252,6 @@ export interface ActionPriorityFee {
 	m_index: number;
 }
 
-// Type definition for `zktt::models::structs::ActionReplayAttack` struct
-export interface ActionReplayAttack {
-	fieldOrder: string[];
-	m_value: number;
-	m_index: number;
-}
-
-// Type definition for `zktt::models::structs::ActionFiftyOnePercentAttack` struct
-export interface ActionFiftyOnePercentAttack {
-	fieldOrder: string[];
-	m_owner: string;
-	m_set: Array<StructBlockchain>;
-	m_value: number;
-	m_index: number;
-}
-
-// Type definition for `zktt::models::structs::ActionChainReorg` struct
-export interface ActionChainReorg {
-	fieldOrder: string[];
-	m_self_blockchain_name: string;
-	m_opponent_blockchain_name: string;
-	m_opponent_address: string;
-	m_value: number;
-	m_index: number;
-}
-
-// Type definition for `zktt::models::structs::ActionSandwichAttack` struct
-export interface ActionSandwichAttack {
-	fieldOrder: string[];
-	m_value: number;
-	m_index: number;
-}
-
-// Type definition for `zktt::models::components::ComponentDepositValue` struct
-export interface ComponentDepositValue {
-	fieldOrder: string[];
-	m_cards: Array<EnumCard>;
-	m_total_value: number;
-}
-
-// Type definition for `zktt::models::structs::StructBlockchain` struct
-export interface StructBlockchain {
-	fieldOrder: string[];
-	m_name: string;
-	m_bc_type: EnumBlockchainType;
-	m_fee: number;
-	m_value: number;
-}
-
-// Type definition for `zktt::models::structs::ActionClaimYield` struct
-export interface ActionClaimYield {
-	fieldOrder: string[];
-	m_value: number;
-	m_index: number;
-}
-
-// Type definition for `zktt::models::components::ComponentGame` struct
-export interface ComponentGame {
-	fieldOrder: string[];
-	m_ent_seed: number;
-	m_state: EnumGameState;
-	m_players: Array<string>;
-	m_player_in_turn: string;
-}
-
-// Type definition for `zktt::models::components::ComponentGameValue` struct
-export interface ComponentGameValue {
-	fieldOrder: string[];
-	m_state: EnumGameState;
-	m_players: Array<string>;
-	m_player_in_turn: string;
-}
-
-// Type definition for `zktt::models::structs::ActionGasFee` struct
-export interface ActionGasFee {
-	fieldOrder: string[];
-	m_players_affected: EnumPlayerTarget;
-	m_blockchain_type_affected: EnumGasFeeType;
-	m_set_applied: Array<StructBlockchain>;
-	m_value: number;
-	m_index: number;
-}
-
 // Type definition for `zktt::models::structs::StructBlockchain` struct
 export interface StructBlockchain {
 	fieldOrder: string[];
@@ -333,13 +269,6 @@ export interface StructAsset {
 	m_index: number;
 }
 
-// Type definition for `zktt::models::structs::ActionPriorityFee` struct
-export interface ActionPriorityFee {
-	fieldOrder: string[];
-	m_value: number;
-	m_index: number;
-}
-
 // Type definition for `zktt::models::structs::ActionSandwichAttack` struct
 export interface ActionSandwichAttack {
 	fieldOrder: string[];
@@ -347,17 +276,47 @@ export interface ActionSandwichAttack {
 	m_index: number;
 }
 
-// Type definition for `zktt::models::components::ComponentHand` struct
-export interface ComponentHand {
+// Type definition for `zktt::models::structs::ActionFiftyOnePercentAttack` struct
+export interface ActionFiftyOnePercentAttack {
 	fieldOrder: string[];
-	m_ent_owner: string;
-	m_cards: Array<EnumCard>;
+	m_owner: string;
+	m_set: Array<StructBlockchain>;
+	m_value: number;
+	m_index: number;
 }
 
-// Type definition for `zktt::models::components::ComponentHandValue` struct
-export interface ComponentHandValue {
+// Type definition for `zktt::models::structs::ActionGasFee` struct
+export interface ActionGasFee {
+	fieldOrder: string[];
+	m_players_affected: EnumPlayerTarget;
+	m_blockchain_type_affected: EnumGasFeeType;
+	m_set_applied: Array<StructBlockchain>;
+	m_value: number;
+	m_index: number;
+}
+
+// Type definition for `zktt::models::components::ComponentDepositValue` struct
+export interface ComponentDepositValue {
 	fieldOrder: string[];
 	m_cards: Array<EnumCard>;
+	m_total_value: number;
+}
+
+// Type definition for `zktt::models::components::ComponentGameValue` struct
+export interface ComponentGameValue {
+	fieldOrder: string[];
+	m_state: EnumGameState;
+	m_players: Array<string>;
+	m_player_in_turn: string;
+}
+
+// Type definition for `zktt::models::components::ComponentGame` struct
+export interface ComponentGame {
+	fieldOrder: string[];
+	m_ent_seed: number;
+	m_state: EnumGameState;
+	m_players: Array<string>;
+	m_player_in_turn: string;
 }
 
 // Type definition for `zktt::models::structs::ActionFrontrun` struct
@@ -377,11 +336,51 @@ export interface ActionFiftyOnePercentAttack {
 	m_index: number;
 }
 
-// Type definition for `zktt::models::structs::ActionReplayAttack` struct
-export interface ActionReplayAttack {
+// Type definition for `zktt::models::structs::ActionGasFee` struct
+export interface ActionGasFee {
+	fieldOrder: string[];
+	m_players_affected: EnumPlayerTarget;
+	m_blockchain_type_affected: EnumGasFeeType;
+	m_set_applied: Array<StructBlockchain>;
+	m_value: number;
+	m_index: number;
+}
+
+// Type definition for `zktt::models::components::ComponentHandValue` struct
+export interface ComponentHandValue {
+	fieldOrder: string[];
+	m_cards: Array<EnumCard>;
+}
+
+// Type definition for `zktt::models::structs::ActionPriorityFee` struct
+export interface ActionPriorityFee {
 	fieldOrder: string[];
 	m_value: number;
 	m_index: number;
+}
+
+// Type definition for `zktt::models::components::ComponentHand` struct
+export interface ComponentHand {
+	fieldOrder: string[];
+	m_ent_owner: string;
+	m_cards: Array<EnumCard>;
+}
+
+// Type definition for `zktt::models::structs::StructAsset` struct
+export interface StructAsset {
+	fieldOrder: string[];
+	m_name: string;
+	m_value: number;
+	m_index: number;
+}
+
+// Type definition for `zktt::models::structs::StructBlockchain` struct
+export interface StructBlockchain {
+	fieldOrder: string[];
+	m_name: string;
+	m_bc_type: EnumBlockchainType;
+	m_fee: number;
+	m_value: number;
 }
 
 // Type definition for `zktt::models::structs::ActionChainReorg` struct
@@ -394,21 +393,25 @@ export interface ActionChainReorg {
 	m_index: number;
 }
 
-// Type definition for `zktt::models::structs::ActionClaimYield` struct
-export interface ActionClaimYield {
+// Type definition for `zktt::models::structs::ActionSandwichAttack` struct
+export interface ActionSandwichAttack {
 	fieldOrder: string[];
 	m_value: number;
 	m_index: number;
 }
 
-// Type definition for `zktt::models::components::ComponentPlayerValue` struct
-export interface ComponentPlayerValue {
+// Type definition for `zktt::models::structs::ActionReplayAttack` struct
+export interface ActionReplayAttack {
 	fieldOrder: string[];
-	m_username: string;
-	m_moves_remaining: number;
-	m_score: number;
-	m_has_drawn: boolean;
-	m_in_debt: Option;
+	m_value: number;
+	m_index: number;
+}
+
+// Type definition for `zktt::models::structs::ActionClaimYield` struct
+export interface ActionClaimYield {
+	fieldOrder: string[];
+	m_value: number;
+	m_index: number;
 }
 
 // Type definition for `zktt::models::components::ComponentPlayer` struct
@@ -422,17 +425,14 @@ export interface ComponentPlayer {
 	m_in_debt: Option;
 }
 
-// Type definition for `zktt::models::enums::EnumPlayerTarget` enum
-export enum EnumPlayerTarget {
-	All,
-	None,
-	One,
-}
-
-// Type definition for `zktt::models::enums::EnumGasFeeType` enum
-export enum EnumGasFeeType {
-	Any,
-	AgainstTwo,
+// Type definition for `zktt::models::components::ComponentPlayerValue` struct
+export interface ComponentPlayerValue {
+	fieldOrder: string[];
+	m_username: string;
+	m_moves_remaining: number;
+	m_score: number;
+	m_has_drawn: boolean;
+	m_in_debt: Option;
 }
 
 // Type definition for `zktt::models::enums::EnumBlockchainType` enum
@@ -463,37 +463,53 @@ export enum EnumCard {
 	SandwichAttack,
 }
 
+// Type definition for `zktt::models::enums::EnumGasFeeType` enum
+export enum EnumGasFeeType {
+	Any,
+	AgainstTwo,
+}
+
+// Type definition for `zktt::models::enums::EnumPlayerTarget` enum
+export enum EnumPlayerTarget {
+	All,
+	None,
+	One,
+}
+
 // Type definition for `zktt::models::enums::EnumGameState` enum
 export enum EnumGameState {
 	WaitingForPlayers,
 	WaitingForRent,
 	Started,
+	Ended,
 }
 
 export interface ZkttSchemaType extends SchemaType {
 	zktt: {
-		ActionChainReorg: ActionChainReorg,
 		ActionReplayAttack: ActionReplayAttack,
+		ComponentCardValue: ComponentCardValue,
+		ComponentCard: ComponentCard,
+		ActionFrontrun: ActionFrontrun,
+		ActionFiftyOnePercentAttack: ActionFiftyOnePercentAttack,
 		ActionClaimYield: ActionClaimYield,
 		ActionGasFee: ActionGasFee,
-		ActionFiftyOnePercentAttack: ActionFiftyOnePercentAttack,
-		ComponentDealer: ComponentDealer,
-		ComponentDealerValue: ComponentDealerValue,
-		ActionSandwichAttack: ActionSandwichAttack,
+		ActionChainReorg: ActionChainReorg,
 		ActionPriorityFee: ActionPriorityFee,
 		StructAsset: StructAsset,
 		StructBlockchain: StructBlockchain,
-		ActionFrontrun: ActionFrontrun,
-		ComponentDeck: ComponentDeck,
+		ActionSandwichAttack: ActionSandwichAttack,
+		ComponentDealer: ComponentDealer,
+		ComponentDealerValue: ComponentDealerValue,
 		ComponentDeckValue: ComponentDeckValue,
+		ComponentDeck: ComponentDeck,
 		ComponentDeposit: ComponentDeposit,
 		ComponentDepositValue: ComponentDepositValue,
-		ComponentGame: ComponentGame,
 		ComponentGameValue: ComponentGameValue,
-		ComponentHand: ComponentHand,
+		ComponentGame: ComponentGame,
 		ComponentHandValue: ComponentHandValue,
-		ComponentPlayerValue: ComponentPlayerValue,
+		ComponentHand: ComponentHand,
 		ComponentPlayer: ComponentPlayer,
+		ComponentPlayerValue: ComponentPlayerValue,
 		ERC__Balance: ERC__Balance,
 		ERC__Token: ERC__Token,
 		ERC__Transfer: ERC__Transfer,
@@ -501,16 +517,30 @@ export interface ZkttSchemaType extends SchemaType {
 }
 export const schema: ZkttSchemaType = {
 	zktt: {
-		ActionChainReorg: {
-			fieldOrder: ['m_self_blockchain_name', 'm_opponent_blockchain_name', 'm_opponent_address', 'm_value', 'm_index'],
-			m_self_blockchain_name: "",
-			m_opponent_blockchain_name: "",
-			m_opponent_address: "",
+		ActionReplayAttack: {
+			fieldOrder: ['m_value', 'm_index'],
 			m_value: 0,
 			m_index: 0,
 		},
-		ActionReplayAttack: {
-			fieldOrder: ['m_value', 'm_index'],
+		ComponentCardValue: {
+			fieldOrder: ['m_card_info'],
+			m_card_info: EnumCard.Asset,
+		},
+		ComponentCard: {
+			fieldOrder: ['m_ent_index', 'm_card_info'],
+			m_ent_index: 0,
+			m_card_info: EnumCard.Asset,
+		},
+		ActionFrontrun: {
+			fieldOrder: ['m_blockchain_name', 'm_value', 'm_index'],
+			m_blockchain_name: "",
+			m_value: 0,
+			m_index: 0,
+		},
+		ActionFiftyOnePercentAttack: {
+			fieldOrder: ['m_owner', 'm_set', 'm_value', 'm_index'],
+			m_owner: "",
+			m_set: [{ fieldOrder: ['m_name', 'm_bc_type', 'm_fee', 'm_value'], m_name: "", m_bc_type: EnumBlockchainType, m_fee: 0, m_value: 0, }],
 			m_value: 0,
 			m_index: 0,
 		},
@@ -527,24 +557,11 @@ export const schema: ZkttSchemaType = {
 			m_value: 0,
 			m_index: 0,
 		},
-		ActionFiftyOnePercentAttack: {
-			fieldOrder: ['m_owner', 'm_set', 'm_value', 'm_index'],
-			m_owner: "",
-			m_set: [{ fieldOrder: ['m_name', 'm_bc_type', 'm_fee', 'm_value'], m_name: "", m_bc_type: EnumBlockchainType, m_fee: 0, m_value: 0, }],
-			m_value: 0,
-			m_index: 0,
-		},
-		ComponentDealer: {
-			fieldOrder: ['m_ent_owner', 'm_cards'],
-			m_ent_owner: "",
-			m_cards: [EnumCard.Asset],
-		},
-		ComponentDealerValue: {
-			fieldOrder: ['m_cards'],
-			m_cards: [EnumCard.Asset],
-		},
-		ActionSandwichAttack: {
-			fieldOrder: ['m_value', 'm_index'],
+		ActionChainReorg: {
+			fieldOrder: ['m_self_blockchain_name', 'm_opponent_blockchain_name', 'm_opponent_address', 'm_value', 'm_index'],
+			m_self_blockchain_name: "",
+			m_opponent_blockchain_name: "",
+			m_opponent_address: "",
 			m_value: 0,
 			m_index: 0,
 		},
@@ -566,20 +583,28 @@ export const schema: ZkttSchemaType = {
 			m_fee: 0,
 			m_value: 0,
 		},
-		ActionFrontrun: {
-			fieldOrder: ['m_blockchain_name', 'm_value', 'm_index'],
-			m_blockchain_name: "",
+		ActionSandwichAttack: {
+			fieldOrder: ['m_value', 'm_index'],
 			m_value: 0,
 			m_index: 0,
+		},
+		ComponentDealer: {
+			fieldOrder: ['m_ent_owner', 'm_cards'],
+			m_ent_owner: "",
+			m_cards: [0],
+		},
+		ComponentDealerValue: {
+			fieldOrder: ['m_cards'],
+			m_cards: [0],
+		},
+		ComponentDeckValue: {
+			fieldOrder: ['m_cards', 'm_sets'],
+			m_cards: [EnumCard.Asset],
+			m_sets: 0,
 		},
 		ComponentDeck: {
 			fieldOrder: ['m_ent_owner', 'm_cards', 'm_sets'],
 			m_ent_owner: "",
-			m_cards: [EnumCard.Asset],
-			m_sets: 0,
-		},
-		ComponentDeckValue: {
-			fieldOrder: ['m_cards', 'm_sets'],
 			m_cards: [EnumCard.Asset],
 			m_sets: 0,
 		},
@@ -594,6 +619,12 @@ export const schema: ZkttSchemaType = {
 			m_cards: [EnumCard.Asset],
 			m_total_value: 0,
 		},
+		ComponentGameValue: {
+			fieldOrder: ['m_state', 'm_players', 'm_player_in_turn'],
+			m_state: EnumGameState.WaitingForPlayers,
+			m_players: [""],
+			m_player_in_turn: "",
+		},
 		ComponentGame: {
 			fieldOrder: ['m_ent_seed', 'm_state', 'm_players', 'm_player_in_turn'],
 			m_ent_seed: 0,
@@ -601,32 +632,26 @@ export const schema: ZkttSchemaType = {
 			m_players: [""],
 			m_player_in_turn: "",
 		},
-		ComponentGameValue: {
-			fieldOrder: ['m_state', 'm_players', 'm_player_in_turn'],
-			m_state: EnumGameState.WaitingForPlayers,
-			m_players: [""],
-			m_player_in_turn: "",
+		ComponentHandValue: {
+			fieldOrder: ['m_cards'],
+			m_cards: [EnumCard.Asset],
 		},
 		ComponentHand: {
 			fieldOrder: ['m_ent_owner', 'm_cards'],
 			m_ent_owner: "",
 			m_cards: [EnumCard.Asset],
 		},
-		ComponentHandValue: {
-			fieldOrder: ['m_cards'],
-			m_cards: [EnumCard.Asset],
-		},
-		ComponentPlayerValue: {
-			fieldOrder: ['m_username', 'm_moves_remaining', 'm_score', 'm_has_drawn', 'm_in_debt'],
+		ComponentPlayer: {
+			fieldOrder: ['m_ent_owner', 'm_username', 'm_moves_remaining', 'm_score', 'm_has_drawn', 'm_in_debt'],
+			m_ent_owner: "",
 			m_username: "",
 			m_moves_remaining: 0,
 			m_score: 0,
 			m_has_drawn: false,
 			m_in_debt: Option,
 		},
-		ComponentPlayer: {
-			fieldOrder: ['m_ent_owner', 'm_username', 'm_moves_remaining', 'm_score', 'm_has_drawn', 'm_in_debt'],
-			m_ent_owner: "",
+		ComponentPlayerValue: {
+			fieldOrder: ['m_username', 'm_moves_remaining', 'm_score', 'm_has_drawn', 'm_in_debt'],
 			m_username: "",
 			m_moves_remaining: 0,
 			m_score: 0,

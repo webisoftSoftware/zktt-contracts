@@ -16,12 +16,12 @@ trait IGameSystem<T> {
 #[dojo::contract]
 mod game_system {
     use zktt::models::components::{
-        ComponentGame, ComponentHand, ComponentDeck, ComponentDeposit, ComponentPlayer,
-        ComponentDealer
+        ComponentGame, ComponentCard, ComponentHand, ComponentDeck, ComponentDeposit,
+        ComponentPlayer, ComponentDealer
     };
     use zktt::models::traits::{
-        IEnumCard, IPlayer, IDeck, IDealer, IHand, IGasFee, IAssetGroup, IDraw, IGame, IAsset,
-        IBlockchain, IDeposit, IClaimYield, IFiftyOnePercentAttack, IChainReorg, IFrontRun,
+        IEnumCard, IPlayer, ICard, IDeck, IDealer, IHand, IGasFee, IAssetGroup, IDraw, IGame,
+        IAsset, IBlockchain, IDeposit, IClaimYield, IFiftyOnePercentAttack, IChainReorg, IFrontRun,
         ISandwichAttack, IPriorityFee
     };
     use zktt::models::enums::{
@@ -50,7 +50,22 @@ mod game_system {
         /// None.
         /// Can Panic?: yes
         fn start(ref self: ContractState) -> () {
-            let mut world = self.world_default();
+            let mut world = InternalImpl::world_default(@self);
+            let cards_in_order = InternalImpl::_create_cards();
+            let mut flattened_cards = InternalImpl::_flatten(ref world, cards_in_order);
+            let mut dealer: ComponentDealer = IDealer::new(
+                world.dispatcher.contract_address, array![]
+            );
+
+            let mut index = 0;
+            while let Option::Some(card) = flattened_cards.pop_front() {
+                let new_card = ICard::new(index, card);
+                world.write_model(@new_card);
+                dealer.m_cards.append(index);
+                index += 1;
+            };
+
+            world.write_model(@dealer);
             let seed = world.dispatcher.contract_address;
             let mut game: ComponentGame = world.read_model(seed);
 
@@ -65,7 +80,15 @@ mod game_system {
             let mut dealer: ComponentDealer = world.read_model(world.dispatcher.contract_address);
             dealer.shuffle(seed);
 
-            self._distribute_cards(ref game.m_players, ref dealer.m_cards);
+            let mut card_array: Array<EnumCard> = ArrayTrait::new();
+            for card_index in dealer
+                .m_cards
+                .span() {
+                    let card_component: ComponentCard = world.read_model(*card_index);
+                    card_array.append(card_component.m_card_info);
+                };
+
+            self._distribute_cards(ref game.m_players, ref card_array);
 
             game.assign_next_turn(true);
             world.write_model(@dealer);
@@ -82,7 +105,7 @@ mod game_system {
         /// None.
         /// Can Panic?: yes
         fn end_turn(ref self: ContractState) -> () {
-            let mut world = self.world_default();
+            let mut world = InternalImpl::world_default(@self);
             let mut game: ComponentGame = world.read_model(world.dispatcher.contract_address);
             assert!(game.m_state == EnumGameState::Started, "Game has not started yet");
             assert!(game.m_player_in_turn == get_caller_address(), "Not player's turn");
@@ -317,7 +340,9 @@ mod game_system {
         /// Output:
         /// The deck with all copies of all the card types (flattened) [105].
         /// Can Panic?: yes
-        fn _flatten(mut container: Array<EnumCard>) -> Array<EnumCard> {
+        fn _flatten(
+            ref world: dojo::world::WorldStorage, mut container: Array<EnumCard>
+        ) -> Array<EnumCard> {
             let mut flattened_array = ArrayTrait::new();
 
             while let Option::Some(mut card) = container.pop_front() {
@@ -328,26 +353,6 @@ mod game_system {
                 };
             };
             return flattened_array;
-        }
-
-        /// Create the initial deck of cards for the game and assign them to the dealer. Only ran
-        /// once when the contract deploys (sort of acting as a singleton).
-        ///
-        /// Inputs:
-        /// *world*: The mutable reference of the world to write components to.
-        ///
-        /// Output:
-        /// None.
-        /// Can Panic?: yes
-        fn dojo_init(ref self: ContractState) {
-            // Step 1: Create cards and put them in a container in order.
-            let mut world = self.world_default();
-            let cards_in_order = Self::_create_cards();
-            let flattened_cards = Self::_flatten(cards_in_order);
-            let dealer: ComponentDealer = IDealer::new(
-                world.dispatcher.contract_address, flattened_cards
-            );
-            world.write_model(@dealer);
         }
     }
 }

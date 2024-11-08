@@ -52,7 +52,14 @@ pub fn deploy_game(ref world: WorldStorage) -> IGameSystemDispatcher {
 
     world.sync_perms_and_inits([system_def].span());
     let cards_in_order = game_system::InternalImpl::_create_cards();
-    let dealer: ComponentDealer = IDealer::new(world.dispatcher.contract_address, cards_in_order);
+    let mut flattened_cards = game_system::InternalImpl::_flatten(ref world, cards_in_order);
+    let mut dealer: ComponentDealer = IDealer::new(world.dispatcher.contract_address, array![]);
+
+    let mut index = 0;
+    while index < flattened_cards.len() {
+        dealer.m_cards.append(index);
+        index += 1;
+    };
     world.write_model(@dealer);
 
     return system;

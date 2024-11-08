@@ -1,32 +1,9 @@
 {
   "world": {
     "class_hash": "0x2f92b70bd2b5a40ddef12c55257f245176870b25c7eb0bd7a60cf1f1f2fbf0e",
-    "address": "0x9c4382dc6a6e9813dfe097dc5f8bedabaa94ba19c1ea073c9d903f224a9784",
-    "seed": "zktt",
+    "address": "0x56d898e1a5b218421b1d2c0dcf71086e27ac7d60556b8011a97d9b067a22243",
+    "seed": "zktt-3",
     "name": "zktt",
-    "entrypoints": [
-      "uuid",
-      "set_metadata",
-      "register_namespace",
-      "register_event",
-      "register_model",
-      "register_contract",
-      "init_contract",
-      "upgrade_event",
-      "upgrade_model",
-      "upgrade_contract",
-      "emit_event",
-      "emit_events",
-      "set_entity",
-      "set_entities",
-      "delete_entity",
-      "delete_entities",
-      "grant_owner",
-      "revoke_owner",
-      "grant_writer",
-      "revoke_writer",
-      "upgrade"
-    ],
     "abi": [
       {
         "type": "impl",
@@ -1243,8 +1220,8 @@
   },
   "contracts": [
     {
-      "address": "0x532f4a502524971d9dcbce01157b350b3502699fdcc0102ecc360cb823b5672",
-      "class_hash": "0x6800267b76f8bf10df4a13531558dc6cc4312fcf63d4d04080e8320fc3605f",
+      "address": "0x325ecc3d1a06d3868685a82290148d2cce41221e2fe87d71a6451fec77b3d3c",
+      "class_hash": "0x53df4240035a573ee2d5176d70160d67043662a7ac837298dbc0ca6be585ff3",
       "abi": [
         {
           "type": "impl",
@@ -1806,18 +1783,11 @@
       ],
       "init_calldata": [],
       "tag": "zktt-action_system",
-      "selector": "0x7de08a6072ffbb4296d66aa92f5d1a86c85de2b5a87c5ea93933adda0b652f4",
-      "systems": [
-        "draw",
-        "play",
-        "move",
-        "pay_fee",
-        "upgrade"
-      ]
+      "systems": []
     },
     {
-      "address": "0x5801be99f37b846f1c1286a7bdfe3a607f609855be100055cafed3a0f717f39",
-      "class_hash": "0x2c002a2f4d9cd541c48875b86a000785f937e5fd8b7e1188d9d735612cf5d05",
+      "address": "0x76f8d509dac11e7db93304f89b3c13fecef38b92c9b77f46f610e67051aebc5",
+      "class_hash": "0x1a04eb6c41aea087ee3184b9f21689154e9492aea8a0639c7a504700d2bf1c7",
       "abi": [
         {
           "type": "impl",
@@ -2011,16 +1981,11 @@
       ],
       "init_calldata": [],
       "tag": "zktt-game_system",
-      "selector": "0x7b9d719782d8b0d71a05720cca02a484d6831edd251696f11356c567d232349",
-      "systems": [
-        "start",
-        "end_turn",
-        "upgrade"
-      ]
+      "systems": []
     },
     {
-      "address": "0x73a389473ab01c2c2e2bd1cd17e18ff36e6afe575a8fa626641ae968cb7460e",
-      "class_hash": "0x1ef28799988a2de3a2280e4719982f0028c6895721d7a898d072581707c58fc",
+      "address": "0x533bb2f5c1d6fcb65adc8960b9a0f80a8b2d6c3020bbb9691710e7ab69a0e6d",
+      "class_hash": "0x15dac246dd07189bb8614e63848ad260ad98837a623d4537a7876cad2a1ab4d",
       "abi": [
         {
           "type": "impl",
@@ -2219,50 +2184,44 @@
       ],
       "init_calldata": [],
       "tag": "zktt-player_system",
-      "selector": "0x251406e876ed01c5effee438f14c8db9467e3e514597240c4a696787397364c",
-      "systems": [
-        "join",
-        "leave",
-        "upgrade"
-      ]
+      "systems": []
     }
   ],
   "models": [
     {
       "members": [],
-      "class_hash": "0x232939336f541f5dcdb3d2c1475ee6ef40c93caea57003792b838030fcb5247",
-      "tag": "ComponentDealer",
-      "selector": "0x365a5cec38ff238239e312febf005f1ba0653c6cb1a330fe45096a819f47b25"
+      "class_hash": "0x1aac45bb1e009cb00f1e460a5927b630f28eaf0c6e8447cfcaad9a2f1765b30",
+      "tag": "ComponentCard"
+    },
+    {
+      "members": [],
+      "class_hash": "0x6126ab65451ffd037b691aa0c9119c1e54744b31dd3886186f1989fdf2ba4b9",
+      "tag": "ComponentDealer"
     },
     {
       "members": [],
       "class_hash": "0x6d6eb7d74bfee8c12ab9fc16e2715f50350b8aa777e8def6b9218a30b073d75",
-      "tag": "ComponentDeck",
-      "selector": "0x7e82c7e2e1001670f78c6407f4e0f27cf6b4ee85ffeb948bf712cce2f4b7b5d"
+      "tag": "ComponentDeck"
     },
     {
       "members": [],
       "class_hash": "0x1075324a1db1d5f3340966471063afb31f53a209649ebea5f842216604f3cca",
-      "tag": "ComponentDeposit",
-      "selector": "0x60e96a22b3b25675ae59be923b5cc9abe9e1a65c70da4ce2750996d716e79db"
+      "tag": "ComponentDeposit"
     },
     {
       "members": [],
-      "class_hash": "0x377be766aa0cba9520c2f293386d1fc27dea16238bc63134d79d03b4ce53c05",
-      "tag": "ComponentGame",
-      "selector": "0x472b97688ea5a8dfdf9372f3717345ce6da78e3e8275ac5c69583c21d45f109"
+      "class_hash": "0x7b3ee8dc8502479032edbc1f4e4d07fff2741ceb8037f2e16694231423c65f2",
+      "tag": "ComponentGame"
     },
     {
       "members": [],
       "class_hash": "0x70689949c53b84cd1a226f94ef70e9bc13a57e75c06a7a00662fb3c13e57dcb",
-      "tag": "ComponentHand",
-      "selector": "0x583cd6314845966f2317ffbca839631a4ec6ec237d086219e2ea8f6f516bf70"
+      "tag": "ComponentHand"
     },
     {
       "members": [],
       "class_hash": "0x618b0e5265337a6e99e601700ce6c2953f3268e8a35be0ecd93289f57793c44",
-      "tag": "ComponentPlayer",
-      "selector": "0x3d63875498d93f557181f1f5f29fbd8630779767d441d537fb93888356e197f"
+      "tag": "ComponentPlayer"
     }
   ],
   "events": []

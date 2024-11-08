@@ -27,8 +27,8 @@ trait IActionSystem<T> {
 mod action_system {
     use super::{EnumCard, EnumGameState, ContractAddress};
     use zktt::models::components::{
-        ComponentGame, ComponentHand, ComponentDeck, ComponentDeposit, ComponentPlayer,
-        ComponentDealer
+        ComponentGame, ComponentCard, ComponentHand, ComponentDeck, ComponentDeposit,
+        ComponentPlayer, ComponentDealer
     };
     use zktt::models::traits::{
         IEnumCard, IPlayer, IDeck, IDealer, IHand, IGasFee, IAssetGroup, IDraw, IGame, IAsset,
@@ -81,8 +81,9 @@ mod action_system {
                     if dealer.m_cards.is_empty() {
                         panic!("Dealer has no more cards");
                     }
-                    let card = dealer.pop_card().unwrap();
-                    hand.add(card);
+                    let card_index = dealer.pop_card().unwrap();
+                    let card_component: ComponentCard = world.read_model(card_index);
+                    hand.add(card_component.m_card_info);
                     index += 1;
                 }
             } else {
@@ -91,8 +92,11 @@ mod action_system {
                 assert!(
                     card1_opt.is_some() && card2_opt.is_some(), "Deck does not have any more cards!"
                 );
-                hand.add(card1_opt.unwrap());
-                hand.add(card2_opt.unwrap());
+                let card1_info: ComponentCard = world.read_model(card1_opt.unwrap());
+                let card2_info: ComponentCard = world.read_model(card2_opt.unwrap());
+
+                hand.add(card1_info.m_card_info);
+                hand.add(card2_info.m_card_info);
             }
 
             player.m_has_drawn = true;
@@ -384,8 +388,12 @@ mod action_system {
                         .read_model(world.dispatcher.contract_address);
                     assert!(!dealer.m_cards.is_empty(), "Dealer has no more cards");
 
-                    hand.add(dealer.pop_card().unwrap());
-                    hand.add(dealer.pop_card().unwrap());
+                    let card_component1: ComponentCard = world
+                        .read_model(dealer.pop_card().unwrap());
+                    let card_component2: ComponentCard = world
+                        .read_model(dealer.pop_card().unwrap());
+                    hand.add(card_component1.m_card_info);
+                    hand.add(card_component2.m_card_info);
                     world.write_model(@hand);
                     world.write_model(@dealer);
                 },
