@@ -9,9 +9,8 @@
 
 use starknet::ContractAddress;
 use zktt::models::structs::{
-    ActionChainReorg, ActionClaimYield, ActionFrontrun,
-    ActionPriorityFee, ActionReplayAttack, ActionGasFee, ActionFiftyOnePercentAttack,
-    StructAsset, StructBlockchain
+    ActionChainReorg, ActionClaimYield, ActionFrontrun, ActionPriorityFee, ActionReplayAttack,
+    ActionGasFee, ActionFiftyOnePercentAttack, ActionSandwichAttack, StructAsset, StructBlockchain,
 };
 
 ///////////////////////////////////////////////////////////////////////
@@ -30,13 +29,15 @@ pub enum EnumCard {
     PriorityFee: ActionPriorityFee,
     ReplayAttack: ActionReplayAttack,
     FrontRun: ActionFrontrun,
-    FiftyOnePercentAttack: ActionFiftyOnePercentAttack
+    FiftyOnePercentAttack: ActionFiftyOnePercentAttack,
+    SandwichAttack: ActionSandwichAttack,
 }
 
 #[derive(Drop, Copy, Serde, PartialEq, Introspect, Debug)]
 pub enum EnumGameState {
     WaitingForPlayers: (),
-    Started: ()
+    WaitingForRent: (),
+    Started: (),
 }
 
 #[derive(Drop, Copy, Serde, PartialEq, Introspect, Debug)]

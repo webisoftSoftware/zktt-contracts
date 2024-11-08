@@ -12,7 +12,8 @@ use core::fmt::{Display, Formatter, Error};
 use origami_random::deck::{Deck, DeckTrait};
 use zktt::models::structs::{
     StructAsset, StructBlockchain, StructAssetGroup, ActionPriorityFee, ActionChainReorg,
-    ActionClaimYield, ActionFrontrun, ActionReplayAttack, ActionGasFee, ActionFiftyOnePercentAttack
+    ActionSandwichAttack, ActionClaimYield, ActionFrontrun, ActionReplayAttack, ActionGasFee,
+    ActionFiftyOnePercentAttack
 };
 use zktt::models::enums::{
     EnumCard, EnumBlockchainType, EnumGasFeeType, EnumMoveError, EnumPlayerTarget
@@ -326,6 +327,7 @@ impl EnumCardInto of Into<@EnumCard, ByteArray> {
             EnumCard::ReplayAttack(_) => "Replay Attack",
             EnumCard::FrontRun(_) => "Frontrun",
             EnumCard::FiftyOnePercentAttack(_) => "51% Attack",
+            EnumCard::SandwichAttack(_) => "Sandwich Attack"
         };
     }
 }
@@ -449,6 +451,7 @@ impl DeckImpl of IDeck {
             let mut index = 0;
             while let Option::Some(card) = self.m_cards.pop_front() {
                 if index == index_found {
+                    index += 1;
                     continue;
                 }
 
@@ -555,7 +558,8 @@ impl EnumCardImpl of IEnumCard {
             EnumCard::PriorityFee(data) => { return *data.m_index; },
             EnumCard::ReplayAttack(data) => { return *data.m_index; },
             EnumCard::FrontRun(data) => { return *data.m_index; },
-            EnumCard::FiftyOnePercentAttack(_) => { return 0; }
+            EnumCard::FiftyOnePercentAttack(_) => { return 0; },
+            EnumCard::SandwichAttack(data) => { return *data.m_index; }
         };
     }
 
@@ -573,7 +577,8 @@ impl EnumCardImpl of IEnumCard {
             EnumCard::PriorityFee(data) => { return *data.m_value; },
             EnumCard::ReplayAttack(data) => { return *data.m_value; },
             EnumCard::FrontRun(data) => { return *data.m_value; },
-            EnumCard::FiftyOnePercentAttack(data) => { return *data.m_value; }
+            EnumCard::FiftyOnePercentAttack(data) => { return *data.m_value; },
+            EnumCard::SandwichAttack(data) => { return *data.m_value; }
         };
     }
 
@@ -669,12 +674,14 @@ impl GameImpl of IGame {
             let mut index = 0;
             while let Option::Some(player) = self.m_players.pop_front() {
                 if index == index_found {
+                    index += 1;
                     continue;
                 }
 
                 new_array.append(player);
                 index += 1;
             };
+            self.m_players = new_array;
         }
     }
 
@@ -721,6 +728,64 @@ impl GasFeeImpl of IGasFee {
 }
 
 #[generate_trait]
+impl ClaimYieldImpl of IClaimYield {
+    fn new(value: u8, copies_left: u8) -> ActionClaimYield nopanic {
+        return ActionClaimYield { m_value: value, m_index: copies_left };
+    }
+}
+
+#[generate_trait]
+impl SandwichAttackImpl of ISandwichAttack {
+    fn new(value: u8, copies_left: u8) -> ActionSandwichAttack nopanic {
+        return ActionSandwichAttack { m_value: value, m_index: copies_left };
+    }
+}
+
+#[generate_trait]
+impl FiftyOnePercentAttackImpl of IFiftyOnePercentAttack {
+    fn new(
+        owner: ContractAddress, set: Array<ByteArray>, value: u8, copies_left: u8
+    ) -> ActionFiftyOnePercentAttack nopanic {
+        return ActionFiftyOnePercentAttack {
+            m_owner: owner, m_set: set, m_value: value, m_index: copies_left
+        };
+    }
+}
+
+#[generate_trait]
+impl PriorityFeeImpl of IPriorityFee {
+    fn new(value: u8, copies_left: u8) -> ActionPriorityFee nopanic {
+        return ActionPriorityFee { m_value: value, m_index: copies_left };
+    }
+}
+
+#[generate_trait]
+impl FrontRunImpl of IFrontRun {
+    fn new(blockchain_name: ByteArray, value: u8, copies_left: u8) -> ActionFrontrun nopanic {
+        return ActionFrontrun {
+            m_blockchain_name: blockchain_name, m_value: value, m_index: copies_left
+        };
+    }
+}
+
+#[generate_trait]
+impl ChainReorgImpl of IChainReorg {
+    fn new(
+        self_blockchain_name: ByteArray,
+        opponent_blockchain_name: ByteArray,
+        value: u8,
+        copies_left: u8
+    ) -> ActionChainReorg nopanic {
+        return ActionChainReorg {
+            m_self_blockchain_name: self_blockchain_name,
+            m_opponent_blockchain_name: opponent_blockchain_name,
+            m_value: value,
+            m_index: copies_left
+        };
+    }
+}
+
+#[generate_trait]
 impl HandImpl of IHand {
     fn new(owner: ContractAddress, cards: Array<EnumCard>) -> ComponentHand {
         return ComponentHand { m_ent_owner: owner, m_cards: cards };
@@ -755,6 +820,7 @@ impl HandImpl of IHand {
             let mut new_array: Array<EnumCard> = ArrayTrait::new();
             while let Option::Some(card) = self.m_cards.pop_front() {
                 if index == index_found {
+                    index += 1;
                     continue;
                 }
                 new_array.append(card);
@@ -773,7 +839,6 @@ impl DepositImpl of IDeposit {
 
     fn add(ref self: ComponentDeposit, mut card: EnumCard) -> () {
         assert!(!card.is_blockchain(), "Blockchains cannot be added to money pile");
-
         self.m_total_value += card.get_value();
         self.m_cards.append(card);
         return ();
@@ -797,11 +862,16 @@ impl DepositImpl of IDeposit {
 
     fn remove(ref self: ComponentDeposit, card_name: @ByteArray) -> () {
         if let Option::Some(index_found) = self.contains(card_name) {
-            self.m_total_value -= self.m_cards.at(index_found).get_value();
+            if self.m_total_value < self.m_cards.at(index_found).get_value() {
+                self.m_total_value = 0;
+            } else {
+                self.m_total_value -= self.m_cards.at(index_found).get_value();
+            }
             let mut new_array: Array<EnumCard> = ArrayTrait::new();
             let mut index: usize = 0;
             while let Option::Some(card) = self.m_cards.pop_front() {
                 if index == index_found {
+                    index += 1;
                     continue;
                 }
 
