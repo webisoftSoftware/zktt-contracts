@@ -21,7 +21,7 @@
 
 use starknet::ContractAddress;
 
-use crate::models::enums::EnumCard;
+use crate::models::enums::{EnumCard, EnumGameState};
 use crate::systems::actions::action_system;
 use crate::systems::actions::{IActionSystemDispatcher, IActionSystemDispatcherTrait};
 use crate::systems::game::{IGameSystemDispatcher, IGameSystemDispatcherTrait, game_system};
@@ -29,7 +29,7 @@ use crate::systems::player::{IPlayerSystemDispatcher, IPlayerSystemDispatcherTra
 use crate::models::components::{
     ComponentGame, ComponentHand, ComponentDeposit, ComponentPlayer, ComponentDeck, ComponentDealer
 };
-use crate::models::traits::{ComponentPlayerDisplay, IDealer, IAsset};
+use crate::models::traits::{ComponentPlayerDisplay, IDealer, IAsset, IClaimYield, IHand};
 use crate::tests::utils::namespace_def;
 use crate::tests::integration::test_game::deploy_game;
 use crate::tests::integration::test_player::deploy_player;
@@ -205,7 +205,7 @@ fn test_move() {
 }
 
 #[test]
-fn test_pay_fee() {
+fn test_claim_yield_and_pay_fee() {
     let first_caller: ContractAddress = starknet::contract_address_const::<0x0a>();
     let second_caller: ContractAddress = starknet::contract_address_const::<0x0b>();
     let mut world: WorldStorage = spawn_test_world([namespace_def()].span());
@@ -220,36 +220,95 @@ fn test_pay_fee() {
     player_system.join("Player 2");
     game_system.start();
 
-    // Set player one as the next caller
+    // Set player one as the next caller and draw cards
     starknet::testing::set_contract_address(first_caller);
+    action_system.draw(false);
 
-    // Setup debt and payment cards
+    // Get ClaimYield card and play it
+    let mut hand: ComponentHand = world.read_model(first_caller);
+    let claim_yield_card = EnumCard::ClaimYield(IClaimYield::new(2, 3));
+    hand.add(claim_yield_card.clone());
+    world.write_model_test(@hand);
+
+    // Play ClaimYield card
+    action_system.play(claim_yield_card);
+
+    // Verify game is paused and players are in debt
+    let game: ComponentGame = world.read_model(world.dispatcher.contract_address);
+    assert!(game.m_state == EnumGameState::WaitingForRent, "Game should be paused");
+
+    let player2: ComponentPlayer = world.read_model(second_caller);
+    assert!(player2.m_in_debt == Option::Some(2), "Player 2 should be in debt");
+
+    // Setup payment cards for player 2
     let payment_cards: Array<EnumCard> = array![
-        EnumCard::Asset(IAsset::new("ETH [1]", 1, 1)), EnumCard::Asset(IAsset::new("ETH [1]", 1, 1))
+        EnumCard::Asset(IAsset::new("ETH [1]", 1, 1)), 
+        EnumCard::Asset(IAsset::new("ETH [1]", 1, 1))
     ];
-    let mut player_deposit: ComponentDeposit = world.read_model(first_caller);
-    player_deposit.m_cards = payment_cards.clone();
-    world.write_model_test(@player_deposit);
+    let mut player2_deposit: ComponentDeposit = world.read_model(second_caller);
+    player2_deposit.m_cards = payment_cards.clone();
+    world.write_model_test(@player2_deposit);
 
-    let mut player: ComponentPlayer = world.read_model(first_caller);
-    player.m_in_debt = Option::Some(2);
-    world.write_model_test(@player);
+    // Pay the debt
+    action_system.pay_fee(payment_cards, first_caller, second_caller);
 
-    let mut deposit: ComponentDeposit = world.read_model(first_caller);
+    // Verify game resumed and debt cleared
+    let game_after: ComponentGame = world.read_model(world.dispatcher.contract_address);
+    assert!(game_after.m_state == EnumGameState::Started, "Game should resume after payment");
 
-    deposit.m_cards = payment_cards.clone();
-    world.write_model_test(@deposit);
+    let player2_after: ComponentPlayer = world.read_model(second_caller);
+    assert!(player2_after.m_in_debt.is_none(), "Debt should be cleared");
 
-    // Execute payment
-    action_system.pay_fee(payment_cards, second_caller, first_caller);
+    // Verify creditor received payment
+    let creditor_deposit_after: ComponentDeposit = world.read_model(first_caller);
+    assert!(
+        creditor_deposit_after.m_total_value ==  2,
+        "Creditor should receive payment"
+    );
 
-    // Verify debt cleared
-    let player: ComponentPlayer = world.read_model(first_caller);
-    assert!(player.m_in_debt.is_none(), "Debt should be cleared");
+    // Verify debtor's deposit decreased
+    let debtor_deposit_after: ComponentDeposit = world.read_model(second_caller);
+    assert!(debtor_deposit_after.m_total_value == 0, "Debtor's deposit should be empty");
 
-    // Verify card transfer
-    let payer_deposit: ComponentDeposit = world.read_model(first_caller);
-    let recipient_deposit: ComponentDeposit = world.read_model(second_caller);
-    assert!(payer_deposit.m_cards.is_empty(), "Payer deposit should be empty");
-    assert!(recipient_deposit.m_cards.len() == 2, "Recipient should have received cards");
+    // Verify can play cards again after debt cleared
+    let mut hand2: ComponentHand = world.read_model(first_caller);
+    let new_asset = EnumCard::Asset(IAsset::new("ETH [2]", 2, 1));
+    hand2.add(new_asset.clone());
+    world.write_model_test(@hand2);
+    action_system.play(new_asset); // Should not panic
+}
+
+#[test]
+#[should_panic(expected: ("Game is paused", 'ENTRYPOINT_FAILED'))]
+fn test_actions_blocked_during_debt() {
+    let first_caller: ContractAddress = starknet::contract_address_const::<0x0a>();
+    let second_caller: ContractAddress = starknet::contract_address_const::<0x0b>();
+    let mut world: WorldStorage = spawn_test_world([namespace_def()].span());
+    let game_system: IGameSystemDispatcher = deploy_game(ref world);
+    let action_system: IActionSystemDispatcher = deploy_actions(ref world);
+    let player_system: IPlayerSystemDispatcher = deploy_player(ref world);
+
+    // Setup game with two players
+    starknet::testing::set_contract_address(first_caller);
+    player_system.join("Player 1");
+    starknet::testing::set_contract_address(second_caller);
+    player_system.join("Player 2");
+    game_system.start();
+
+    // Player 1 plays ClaimYield
+    starknet::testing::set_contract_address(first_caller);
+    action_system.draw(false);
+    let mut hand: ComponentHand = world.read_model(first_caller);
+    let claim_yield_card = EnumCard::ClaimYield(IClaimYield::new(2, 3));
+    hand.add(claim_yield_card.clone());
+    world.write_model_test(@hand);
+    action_system.play(claim_yield_card);
+
+    // Player 2 tries to play a card while in debt - should fail
+    starknet::testing::set_contract_address(second_caller);
+    let test_asset = EnumCard::Asset(IAsset::new("ETH [1]", 1, 1));
+    let mut hand2: ComponentHand = world.read_model(second_caller);
+    hand2.add(test_asset.clone());
+    world.write_model_test(@hand2);
+    action_system.play(test_asset); // This should panic
 }
