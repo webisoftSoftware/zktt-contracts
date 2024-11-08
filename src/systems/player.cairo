@@ -79,11 +79,7 @@ mod player_system {
             let mut deck: ComponentDeck = world.read_model(get_caller_address());
             let mut deposit: ComponentDeposit = world.read_model(get_caller_address());
 
-            // TODO: Cleanup after player by setting all card owner's to 0.
-            // hand.discard_cards();
-            // deck.discard_cards();
-            // deposit.discard_cards();
-
+            // Cleanup after player by setting all card owner's to 0.
             game.remove_player(@get_caller_address());
             world.erase_model(@hand);
             world.erase_model(@deck);
