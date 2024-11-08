@@ -9,9 +9,8 @@
 
 use starknet::ContractAddress;
 use zktt::models::structs::{
-    ActionChainReorg, ActionClaimYield, ActionFrontrun,
-    ActionPriorityFee, ActionReplayAttack, ActionGasFee, ActionFiftyOnePercentAttack,
-    StructAsset, StructBlockchain
+    ActionChainReorg, ActionClaimYield, ActionFrontrun, ActionPriorityFee, ActionReplayAttack,
+    ActionGasFee, ActionFiftyOnePercentAttack, StructAsset, StructBlockchain
 };
 
 ///////////////////////////////////////////////////////////////////////

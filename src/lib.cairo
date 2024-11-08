@@ -20,7 +20,7 @@ mod systems {
     mod player;
 }
 
-#[cfg(test)]  // Only compile when testing (sozo test).
+#[cfg(test)] // Only compile when testing (sozo test).
 mod tests {
     mod utils;
     mod integration {
@@ -28,6 +28,5 @@ mod tests {
         mod test_actions;
         mod test_player;
     }
-    mod unit {
-    }
+    mod unit {}
 }

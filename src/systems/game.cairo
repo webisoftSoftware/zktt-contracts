@@ -33,13 +33,12 @@ mod game_system {
 
     #[abi(embed_v0)]
     impl GameSystemImpl of super::IGameSystem<ContractState> {
-
         //////////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////////
         /////////////////////////////// EXTERNAL /////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////////
-        
+
         /// Starts the game and denies any new players from joining, as long as there are at
         /// least two players that have joined for up to a maximum of 5 players.
         ///
@@ -94,7 +93,6 @@ mod game_system {
 
     #[generate_trait]
     impl InternalImpl of InternalTrait {
-
         //////////////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////////
         /////////////////////////////// INTERNAL /////////////////////////////////////
@@ -107,9 +105,9 @@ mod game_system {
             self.world(@"zktt")
         }
 
-        /// Create the seed to provide to the randomizer for shuffling cards in the deck at the beginning
-        /// of the game. The seed is meant to be a deterministic ranzomized hash, in the event that the
-        /// game needs to be inspected and verified for proof.
+        /// Create the seed to provide to the randomizer for shuffling cards in the deck at the
+        /// beginning of the game. The seed is meant to be a deterministic ranzomized hash, in the
+        /// event that the game needs to be inspected and verified for proof.
         ///
         /// Inputs:
         /// *world*: The mutable reference of the world to write components to.
@@ -181,7 +179,7 @@ mod game_system {
         /// Can Panic?: no
         fn _create_cards() -> Array<EnumCard> nopanic {
             // Step 1: Create cards and put them in a container in order.
-            let cards_in_order: Array<EnumCard> = // Eth.
+            let cards_in_order: Array<EnumCard> =  // Eth.
             array![
                 EnumCard::Asset(IAsset::new("ETH [1]", 1, 6)),
                 EnumCard::Asset(IAsset::new("ETH [2]", 2, 5)),
@@ -235,8 +233,9 @@ mod game_system {
                 // Actions.
                 // EnumCard::PriorityFee(IPriorityFee::new(1, 10)),
                 // EnumCard::ClaimYield(IClaimYield::new(2, 3)),
-                // EnumCard::FiftyOnePercentAttack(IFiftyOnePercentAttack::new(Option::None, Option::None, 5, 1)),
-                // EnumCard::FrontRun(IFrontRun::new(Option::None, Option::None, 3, 3)),
+                // EnumCard::FiftyOnePercentAttack(IFiftyOnePercentAttack::new(Option::None,
+                // Option::None, 5, 1)), EnumCard::FrontRun(IFrontRun::new(Option::None,
+                // Option::None, 3, 3)),
                 EnumCard::GasFee(
                     IGasFee::new(
                         EnumPlayerTarget::All,
@@ -308,8 +307,8 @@ mod game_system {
             return cards_in_order;
         }
 
-        /// Create the initial deck of cards for the game and assign them to the dealer. Only ran once
-        /// when the contract deploys (sort of acting as a singleton).
+        /// Create the initial deck of cards for the game and assign them to the dealer. Only ran
+        /// once when the contract deploys (sort of acting as a singleton).
         ///
         /// Inputs:
         /// *world*: The mutable reference of the world to write components to.
