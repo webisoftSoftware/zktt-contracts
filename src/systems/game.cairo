@@ -7,10 +7,13 @@
 ////////////////////////////////                                    ////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+use starknet::ContractAddress;
+
 #[starknet::interface]
 trait IGameSystem<T> {
-    fn start(ref self: T) -> ();
-    fn end_turn(ref self: T) -> ();
+    fn start(ref self: T, table: ContractAddress) -> ();
+    fn end_turn(ref self: T, table: ContractAddress) -> ();
+    fn end(ref self: T, table: ContractAddress) -> ();
 }
 
 #[dojo::contract]
@@ -20,13 +23,14 @@ mod game_system {
         ComponentPlayer, ComponentDealer
     };
     use zktt::models::traits::{
-        IEnumCard, IPlayer, ICard, IDeck, IDealer, IHand, IGasFee, IAssetGroup, IDraw, IGame,
+        IEnumCard, IPlayer, ICard, IDeck, IDealer, IHand, IGasFee, IAssetGroup, IGame,
         IAsset, IBlockchain, IDeposit, IClaimYield, IFiftyOnePercentAttack, IChainReorg, IFrontRun,
-        ISandwichAttack, IPriorityFee
+        ISandwichAttack, IPriorityFee, IReplayAttack, IHardFork, ISoftFork, IMEVBoost
     };
     use zktt::models::enums::{
-        EnumGasFeeType, EnumPlayerTarget, EnumGameState, EnumBlockchainType, EnumCard
+        EnumGasFeeType, EnumPlayerTarget, EnumGameState, EnumColor, EnumCard
     };
+    use zktt::systems::player::player_system;
     use dojo::world::IWorldDispatcher;
     use core::poseidon::poseidon_hash_span;
     use starknet::{get_caller_address, get_block_timestamp, get_tx_info, ContractAddress};
@@ -49,13 +53,16 @@ mod game_system {
         /// Output:
         /// None.
         /// Can Panic?: yes
-        fn start(ref self: ContractState) -> () {
+        fn start(ref self: ContractState, table: ContractAddress) -> () {
             let mut world = InternalImpl::world_default(@self);
+            let mut game: ComponentGame = world.read_model(table);
+            assert!(game.m_state != EnumGameState::Started, "Game has already started or invalid game ID");
+            assert!(game.m_players.len() >= 2, "Missing at least a player before starting");
+            assert!(player_system::InternalImpl::_is_everyone_ready(@world, table), "Everyone needs to be ready");
+
             let cards_in_order = InternalImpl::_create_cards();
             let mut flattened_cards = InternalImpl::_flatten(ref world, cards_in_order);
-            let mut dealer: ComponentDealer = IDealer::new(
-                world.dispatcher.contract_address, array![]
-            );
+            let mut dealer: ComponentDealer = IDealer::new(table, array![]);
 
             let mut index = 0;
             while let Option::Some(card) = flattened_cards.pop_front() {
@@ -66,18 +73,10 @@ mod game_system {
             };
 
             world.write_model(@dealer);
-            let seed = world.dispatcher.contract_address;
-            let mut game: ComponentGame = world.read_model(seed);
-
-            assert!(game.m_state != EnumGameState::Started, "Game has already started");
-            assert!(game.m_players.len() >= 2, "Missing at least a player before starting");
-
             game.m_state = EnumGameState::Started;
 
-            let seed: felt252 = InternalImpl::_generate_seed(
-                @world.dispatcher.contract_address, @game.m_players
-            );
-            let mut dealer: ComponentDealer = world.read_model(world.dispatcher.contract_address);
+            let seed: felt252 = InternalImpl::_generate_seed(@game.m_players);
+            let mut dealer: ComponentDealer = world.read_model(table);
             dealer.shuffle(seed);
 
             let mut card_array: Array<EnumCard> = ArrayTrait::new();
@@ -88,7 +87,7 @@ mod game_system {
                     card_array.append(card_component.m_card_info);
                 };
 
-            self._distribute_cards(ref game.m_players, ref card_array);
+            InternalImpl::_distribute_cards(ref world, ref game.m_players, ref card_array);
 
             game.assign_next_turn(true);
             world.write_model(@dealer);
@@ -99,19 +98,45 @@ mod game_system {
         /// next turn.
         ///
         /// Inputs:
-        /// *world*: The mutable reference of the world to write components to.
+        /// *self*: The mutable reference of the contract to write components to.
         ///
         /// Output:
         /// None.
         /// Can Panic?: yes
-        fn end_turn(ref self: ContractState) -> () {
+        fn end_turn(ref self: ContractState, table: ContractAddress) -> () {
             let mut world = InternalImpl::world_default(@self);
-            let mut game: ComponentGame = world.read_model(world.dispatcher.contract_address);
+            let mut game: ComponentGame = world.read_model(table);
             assert!(game.m_state == EnumGameState::Started, "Game has not started yet");
             assert!(game.m_player_in_turn == get_caller_address(), "Not player's turn");
 
             game.assign_next_turn(false);
             world.write_model(@game);
+        }
+
+        /// Signal the end of the game. Return all assets and cards to the dealer. Once the game has
+        /// ended. No one can re-join the table. Called from another contract within the world, not
+        /// intended for external use.
+        ///
+        /// Inputs:
+        /// *world*: The mutable reference of the world to write components to.
+        ///
+        /// Output:
+        /// None.
+        /// Can Panic?: yes
+        fn end(ref self: ContractState, table: ContractAddress) -> () {
+            // assert!(get_caller_address() == starknet::contract_address_const::<0x0>(), "Unauthorized");
+
+            let mut world = InternalImpl::world_default(@self);
+            let mut game: ComponentGame = world.read_model(table);
+            assert!(game.m_state == EnumGameState::Started, "Game has not started yet");
+
+            InternalImpl::_assign_winner(ref world);
+            game.m_state = EnumGameState::Ended;
+
+            // Double check that we have reaquired all assets from all players.
+            for addr in game.m_players {
+                player_system::InternalImpl::_relinquish_assets(addr, table, ref world);
+            };
         }
     }
 
@@ -140,9 +165,7 @@ mod game_system {
         /// Output:
         /// The resulting seed hash.
         /// Can Panic?: yes
-        fn _generate_seed(
-            world_address: @ContractAddress, players: @Array<ContractAddress>
-        ) -> felt252 {
+        fn _generate_seed(players: @Array<ContractAddress>) -> felt252 {
             let mut array_of_felts: Array<felt252> = array![
                 get_block_timestamp().into(), get_tx_info().nonce
             ];
@@ -169,12 +192,11 @@ mod game_system {
         /// None.
         /// Can Panic?: yes
         fn _distribute_cards(
-            ref self: ContractState, ref players: Array<ContractAddress>, ref cards: Array<EnumCard>
+            ref world: dojo::world::WorldStorage, ref players: Array<ContractAddress>, ref cards: Array<EnumCard>
         ) -> () {
             if players.is_empty() {
                 panic!("There are no players to distribute cards to!");
             }
-            let mut world = self.world_default();
             let mut index = 0;
             while let Option::Some(player) = players.get(index) {
                 if cards.is_empty() {
@@ -196,7 +218,7 @@ mod game_system {
         /// Create the initial deck of cards for the game in a deterministic manner to then shuffle.
         ///
         /// Inputs:
-        /// *world*: The mutable reference of the world to write components to.
+        /// None.
         ///
         /// Output:
         /// The deck with one copy of all the card types (unflatten) [59].
@@ -212,68 +234,43 @@ mod game_system {
                 EnumCard::Asset(IAsset::new("ETH [5]", 5, 2)),
                 EnumCard::Asset(IAsset::new("ETH [10]", 10, 1)),
                 // Blockchains.
-                EnumCard::Blockchain(IBlockchain::new("Aptos", EnumBlockchainType::Grey, 1, 2)),
-                EnumCard::Blockchain(
-                    IBlockchain::new("Arbitrum", EnumBlockchainType::LightBlue, 1, 2)
-                ),
-                EnumCard::Blockchain(IBlockchain::new("Avalanche", EnumBlockchainType::Red, 2, 4)),
-                EnumCard::Blockchain(IBlockchain::new("Base", EnumBlockchainType::LightBlue, 1, 2)),
-                EnumCard::Blockchain(IBlockchain::new("Bitcoin", EnumBlockchainType::Gold, 1, 2)),
-                EnumCard::Blockchain(IBlockchain::new("Blast", EnumBlockchainType::Yellow, 2, 3)),
-                EnumCard::Blockchain(IBlockchain::new("Canto", EnumBlockchainType::Green, 1, 1)),
-                EnumCard::Blockchain(
-                    IBlockchain::new("Celestia", EnumBlockchainType::Purple, 2, 3)
-                ),
-                EnumCard::Blockchain(IBlockchain::new("Celo", EnumBlockchainType::Yellow, 2, 3)),
-                EnumCard::Blockchain(IBlockchain::new("Cosmos", EnumBlockchainType::Blue, 1, 1)),
-                EnumCard::Blockchain(IBlockchain::new("Dogecoin", EnumBlockchainType::Gold, 1, 2)),
-                EnumCard::Blockchain(
-                    IBlockchain::new("Ethereum", EnumBlockchainType::DarkBlue, 3, 4)
-                ),
-                EnumCard::Blockchain(
-                    IBlockchain::new("Fantom", EnumBlockchainType::LightBlue, 1, 2)
-                ),
-                EnumCard::Blockchain(
-                    IBlockchain::new("Gnosis Chain", EnumBlockchainType::Green, 1, 1)
-                ),
-                EnumCard::Blockchain(IBlockchain::new("Kava", EnumBlockchainType::Red, 2, 4)),
-                EnumCard::Blockchain(IBlockchain::new("Linea", EnumBlockchainType::Grey, 1, 2)),
-                EnumCard::Blockchain(
-                    IBlockchain::new("Metis", EnumBlockchainType::LightBlue, 1, 2)
-                ),
-                EnumCard::Blockchain(IBlockchain::new("Near", EnumBlockchainType::Green, 1, 1)),
-                EnumCard::Blockchain(IBlockchain::new("Optimism", EnumBlockchainType::Red, 2, 4)),
-                EnumCard::Blockchain(IBlockchain::new("Osmosis", EnumBlockchainType::Pink, 1, 1)),
-                EnumCard::Blockchain(IBlockchain::new("Polkadot", EnumBlockchainType::Pink, 1, 1)),
-                EnumCard::Blockchain(IBlockchain::new("Polygon", EnumBlockchainType::Purple, 2, 3)),
-                EnumCard::Blockchain(IBlockchain::new("Scroll", EnumBlockchainType::Yellow, 2, 3)),
-                EnumCard::Blockchain(IBlockchain::new("Solana", EnumBlockchainType::Purple, 2, 3)),
-                EnumCard::Blockchain(
-                    IBlockchain::new("Starknet", EnumBlockchainType::DarkBlue, 3, 4)
-                ),
-                EnumCard::Blockchain(IBlockchain::new("Taiko", EnumBlockchainType::Pink, 1, 1)),
-                EnumCard::Blockchain(IBlockchain::new("Ton", EnumBlockchainType::Blue, 1, 1)),
-                EnumCard::Blockchain(IBlockchain::new("ZKSync", EnumBlockchainType::Grey, 1, 2)),
+                EnumCard::Blockchain(IBlockchain::new("Aptos", EnumColor::Grey, 1, 2)),
+                EnumCard::Blockchain(IBlockchain::new("Arbitrum", EnumColor::LightBlue, 1, 2)),
+                EnumCard::Blockchain(IBlockchain::new("Avalanche", EnumColor::Red, 2, 4)),
+                EnumCard::Blockchain(IBlockchain::new("Base", EnumColor::LightBlue, 1, 2)),
+                EnumCard::Blockchain(IBlockchain::new("Bitcoin", EnumColor::Gold, 1, 2)),
+                EnumCard::Blockchain(IBlockchain::new("Blast", EnumColor::Yellow, 2, 3)),
+                EnumCard::Blockchain(IBlockchain::new("Canto", EnumColor::Green, 1, 1)),
+                EnumCard::Blockchain(IBlockchain::new("Celestia", EnumColor::Purple, 2, 3)),
+                EnumCard::Blockchain(IBlockchain::new("Celo", EnumColor::Yellow, 2, 3)),
+                EnumCard::Blockchain(IBlockchain::new("Cosmos", EnumColor::Blue, 1, 1)),
+                EnumCard::Blockchain(IBlockchain::new("Dogecoin", EnumColor::Gold, 1, 2)),
+                EnumCard::Blockchain(IBlockchain::new("Ethereum", EnumColor::DarkBlue, 3, 4)),
+                EnumCard::Blockchain(IBlockchain::new("Fantom", EnumColor::LightBlue, 1, 2)),
+                EnumCard::Blockchain(IBlockchain::new("Gnosis Chain", EnumColor::Green, 1, 1)),
+                EnumCard::Blockchain(IBlockchain::new("Kava", EnumColor::Red, 2, 4)),
+                EnumCard::Blockchain(IBlockchain::new("Linea", EnumColor::Grey, 1, 2)),
+                EnumCard::Blockchain(IBlockchain::new("Metis", EnumColor::LightBlue, 1, 2)),
+                EnumCard::Blockchain(IBlockchain::new("Near", EnumColor::Green, 1, 1)),
+                EnumCard::Blockchain(IBlockchain::new("Optimism", EnumColor::Red, 2, 4)),
+                EnumCard::Blockchain(IBlockchain::new("Osmosis", EnumColor::Pink, 1, 1)),
+                EnumCard::Blockchain(IBlockchain::new("Polkadot", EnumColor::Pink, 1, 1)),
+                EnumCard::Blockchain(IBlockchain::new("Polygon", EnumColor::Purple, 2, 3)),
+                EnumCard::Blockchain(IBlockchain::new("Scroll", EnumColor::Yellow, 2, 3)),
+                EnumCard::Blockchain(IBlockchain::new("Solana", EnumColor::Purple, 2, 3)),
+                EnumCard::Blockchain(IBlockchain::new("Starknet", EnumColor::DarkBlue, 3, 4)),
+                EnumCard::Blockchain(IBlockchain::new("Taiko", EnumColor::Pink, 1, 1)),
+                EnumCard::Blockchain(IBlockchain::new("Ton", EnumColor::Blue, 1, 1)),
+                EnumCard::Blockchain(IBlockchain::new("ZKSync", EnumColor::Grey, 1, 2)),
                 // Actions.
-                EnumCard::PriorityFee(IPriorityFee::new(1, 10)),
-                EnumCard::ClaimYield(IClaimYield::new(2, 3)),
-                EnumCard::FiftyOnePercentAttack(
-                    IFiftyOnePercentAttack::new(
-                        starknet::contract_address_const::<0x0>(), array![], 5, 1
-                    )
-                ),
-                EnumCard::ChainReorg(
-                    IChainReorg::new("", "", starknet::contract_address_const::<0x0>(), 3, 3)
-                ),
-                EnumCard::FrontRun(IFrontRun::new("", 3, 3)),
-                EnumCard::SandwichAttack(ISandwichAttack::new(3, 3)),
-                // EnumCard::ReplayAttack(IReplayAttack::new(1, 2)),
+                EnumCard::ChainReorg(IChainReorg::default()),
+                EnumCard::ClaimYield(IClaimYield::default()),
+                EnumCard::FiftyOnePercentAttack(IFiftyOnePercentAttack::default()),
+                EnumCard::FrontRun(IFrontRun::default()),
                 EnumCard::GasFee(
                     IGasFee::new(
                         EnumPlayerTarget::All,
-                        EnumGasFeeType::AgainstTwo(
-                            (EnumBlockchainType::DarkBlue, EnumBlockchainType::Red)
-                        ),
+                        EnumGasFeeType::AgainstTwo((EnumColor::DarkBlue, EnumColor::Red)),
                         array![],
                         1,
                         2
@@ -282,9 +279,7 @@ mod game_system {
                 EnumCard::GasFee(
                     IGasFee::new(
                         EnumPlayerTarget::All,
-                        EnumGasFeeType::AgainstTwo(
-                            (EnumBlockchainType::Yellow, EnumBlockchainType::Purple)
-                        ),
+                        EnumGasFeeType::AgainstTwo((EnumColor::Yellow, EnumColor::Purple)),
                         array![],
                         1,
                         2
@@ -293,9 +288,7 @@ mod game_system {
                 EnumCard::GasFee(
                     IGasFee::new(
                         EnumPlayerTarget::All,
-                        EnumGasFeeType::AgainstTwo(
-                            (EnumBlockchainType::Green, EnumBlockchainType::LightBlue)
-                        ),
+                        EnumGasFeeType::AgainstTwo((EnumColor::Green, EnumColor::LightBlue)),
                         array![],
                         1,
                         2
@@ -304,9 +297,7 @@ mod game_system {
                 EnumCard::GasFee(
                     IGasFee::new(
                         EnumPlayerTarget::All,
-                        EnumGasFeeType::AgainstTwo(
-                            (EnumBlockchainType::Grey, EnumBlockchainType::Pink)
-                        ),
+                        EnumGasFeeType::AgainstTwo((EnumColor::Grey, EnumColor::Pink)),
                         array![],
                         1,
                         2
@@ -315,17 +306,24 @@ mod game_system {
                 EnumCard::GasFee(
                     IGasFee::new(
                         EnumPlayerTarget::All,
-                        EnumGasFeeType::AgainstTwo(
-                            (EnumBlockchainType::Blue, EnumBlockchainType::Gold)
-                        ),
+                        EnumGasFeeType::AgainstTwo((EnumColor::Blue, EnumColor::Gold)),
                         array![],
                         1,
                         2
                     )
                 ),
                 EnumCard::GasFee(
-                    IGasFee::new(EnumPlayerTarget::None, EnumGasFeeType::Any(()), array![], 3, 3)
+                    IGasFee::new(
+                        EnumPlayerTarget::None,
+                        EnumGasFeeType::Any(()),
+                        array![], 3, 3)
                 ),
+                EnumCard::HardFork(IHardFork::default()),
+                EnumCard::MEVBoost(IMEVBoost::default()),
+                EnumCard::PriorityFee(IPriorityFee::default()),
+                EnumCard::ReplayAttack(IReplayAttack::default()),
+                EnumCard::SandwichAttack(ISandwichAttack::default()),
+                EnumCard::SoftFork(ISoftFork::default()),
             ];
 
             return cards_in_order;
@@ -335,6 +333,7 @@ mod game_system {
         /// dealer.
         ///
         /// Inputs:
+        /// *world*: The mutable reference of the world to write components to.
         /// *container*: The deck with one copy of all the card types (unflatten) [59].
         ///
         /// Output:
@@ -353,6 +352,19 @@ mod game_system {
                 };
             };
             return flattened_array;
+        }
+
+        /// Assign the winner when the game ends. Upon classic end, the winner is attributed to the
+        /// one who gets [3] complete sets in their deck. There can only be one winner.
+        ///
+        /// Inputs:
+        /// *world*: The mutable reference of the world to write components to.
+        ///
+        /// Output:
+        /// None.
+        /// Can Panic?: yes
+        fn _assign_winner(ref world: dojo::world::WorldStorage) -> () {
+            // TODO: Determine the winner upon interrupt and reward for the winner
         }
     }
 }

@@ -8,10 +8,11 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 mod models {
-    mod components;
-    mod enums;
     mod structs;
+    mod actions;
     mod traits;
+    mod enums;
+    mod components;
 }
 
 mod systems {

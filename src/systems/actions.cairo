@@ -9,17 +9,18 @@
 
 use starknet::ContractAddress;
 use zktt::models::enums::{
-    EnumCard, EnumGameState, EnumGasFeeType, EnumPlayerTarget, EnumBlockchainType
+    EnumCard, EnumGameState, EnumGasFeeType, EnumPlayerTarget, EnumColor
 };
 
 
 #[starknet::interface]
 trait IActionSystem<T> {
-    fn draw(ref self: T, draws_five: bool) -> ();
-    fn play(ref self: T, card: EnumCard) -> ();
-    fn move(ref self: T, card: EnumCard) -> ();
+    fn draw(ref self: T, draws_five: bool, table: ContractAddress) -> ();
+    fn play(ref self: T, card: EnumCard, table: ContractAddress) -> ();
+    fn move(ref self: T, card: EnumCard, table: ContractAddress) -> ();
     fn pay_fee(
-        ref self: T, pay: Array<EnumCard>, recipient: ContractAddress, payee: ContractAddress
+        ref self: T, pay: Array<EnumCard>, recipient: ContractAddress, payee: ContractAddress,
+        table: ContractAddress
     ) -> ();
 }
 
@@ -28,13 +29,13 @@ mod action_system {
     use super::{EnumCard, EnumGameState, ContractAddress};
     use zktt::models::components::{
         ComponentGame, ComponentCard, ComponentHand, ComponentDeck, ComponentDeposit,
-        ComponentPlayer, ComponentDealer
+        ComponentPlayer, ComponentDealer, ComponentDiscardPile
     };
     use zktt::models::traits::{
-        IEnumCard, IPlayer, IDeck, IDealer, IHand, IGasFee, IAssetGroup, IDraw, IGame, IAsset,
+        IEnumCard, IPlayer, IDeck, IDealer, IHand, IGasFee, IAssetGroup, IGame, IAsset,
         IBlockchain, IDeposit
     };
-    use zktt::models::enums::{EnumGasFeeType, EnumPlayerTarget, EnumBlockchainType};
+    use zktt::models::enums::{EnumGasFeeType, EnumPlayerTarget, EnumColor};
     use dojo::world::IWorldDispatcher;
     use starknet::get_caller_address;
     use dojo::model::ModelStorage;
@@ -60,19 +61,19 @@ mod action_system {
         /// Output:
         /// None.
         /// Can Panic?: yes
-        fn draw(ref self: ContractState, draws_five: bool) -> () {
+        fn draw(ref self: ContractState, draws_five: bool, table: ContractAddress) -> () {
             let mut world = self.world_default();
             let caller = get_caller_address();
             let mut hand: ComponentHand = world.read_model(caller);
             let mut player: ComponentPlayer = world.read_model(caller);
-            let game: ComponentGame = world.read_model(world.dispatcher.contract_address);
+            let game: ComponentGame = world.read_model(table);
 
             assert!(game.m_state != EnumGameState::WaitingForRent, "Game is paused");
             assert!(game.m_state == EnumGameState::Started, "Game has not started yet");
             assert!(game.m_player_in_turn == caller, "Not player's turn");
             assert!(!player.m_has_drawn, "Cannot draw mid-turn");
 
-            let mut dealer: ComponentDealer = world.read_model(world.dispatcher.contract_address);
+            let mut dealer: ComponentDealer = world.read_model(table);
 
             if draws_five {
                 assert!(hand.m_cards.len() == 0, "Cannot draw five, hand not empty");
@@ -118,9 +119,9 @@ mod action_system {
         /// Output:
         /// None.
         /// Can Panic?: yes
-        fn play(ref self: ContractState, card: EnumCard) -> () {
+        fn play(ref self: ContractState, card: EnumCard, table: ContractAddress) -> () {
             let mut world = self.world_default();
-            let game: ComponentGame = world.read_model(world.dispatcher.contract_address);
+            let game: ComponentGame = world.read_model(table);
             assert!(game.m_state != EnumGameState::WaitingForRent, "Game is paused");
             assert!(game.m_state == EnumGameState::Started, "Game has not started yet");
 
@@ -132,7 +133,7 @@ mod action_system {
             assert!(player.m_moves_remaining != 0, "No moves left");
             assert!(self._is_owner(@card.get_name(), @caller), "Player does not own card");
 
-            self._use_card(@caller, card);
+            self._use_card(@caller, card, table);
             player.m_moves_remaining -= 1;
             world.write_model(@player);
         }
@@ -150,9 +151,9 @@ mod action_system {
         /// Output:
         /// None.
         /// Can Panic?: yes
-        fn move(ref self: ContractState, card: EnumCard) -> () {
+        fn move(ref self: ContractState, card: EnumCard, table: ContractAddress) -> () {
             let mut world = self.world_default();
-            let game: ComponentGame = world.read_model(world.dispatcher.contract_address);
+            let game: ComponentGame = world.read_model(table);
             assert!(game.m_state != EnumGameState::WaitingForRent, "Game is paused");
             assert!(game.m_state == EnumGameState::Started, "Game has not started yet");
 
@@ -185,10 +186,11 @@ mod action_system {
             ref self: ContractState,
             mut pay: Array<EnumCard>,
             recipient: ContractAddress,
-            payee: ContractAddress
+            payee: ContractAddress,
+            table: ContractAddress
         ) -> () {
             let mut world = self.world_default();
-            let mut game: ComponentGame = world.read_model(world.dispatcher.contract_address);
+            let mut game: ComponentGame = world.read_model(table);
             assert!(game.m_state == EnumGameState::WaitingForRent, "Game must be waiting for rent");
 
             let mut player: ComponentPlayer = world.read_model(payee);
@@ -266,11 +268,12 @@ mod action_system {
         /// Output:
         /// None.
         /// Can Panic?: yes
-        fn _use_card(ref self: ContractState, caller: @ContractAddress, card: EnumCard) -> () {
+        fn _use_card(ref self: ContractState, caller: @ContractAddress, card: EnumCard, table: ContractAddress) -> () {
             let mut world = self.world_default();
             let mut hand: ComponentHand = world.read_model(*caller);
             let mut deck: ComponentDeck = world.read_model(*caller);
             let mut deposit: ComponentDeposit = world.read_model(*caller);
+            let mut discard_pile: ComponentDiscardPile = world.read_model(table);
             assert!(hand.contains(@card.get_name()).is_some(), "Card not in player's hand");
             hand.remove(@card.get_name());
 
@@ -283,7 +286,6 @@ mod action_system {
                     deck.add(EnumCard::Blockchain(blockchain_struct.clone()));
                     world.write_model(@deck);
                 },
-                // ... existing code ...
                 EnumCard::ChainReorg(chain_reorg_struct) => {
                     let mut opponent_deck: ComponentDeck = world
                         .read_model(*chain_reorg_struct.m_opponent_address);
@@ -310,113 +312,19 @@ mod action_system {
                     }
                 },
                 EnumCard::ClaimYield(_claim_yield_struct) => {
-                    let mut game: ComponentGame = world
-                        .read_model(world.dispatcher.contract_address);
+                    let mut game: ComponentGame = world.read_model(table);
                     game.m_state = EnumGameState::WaitingForRent;
-                    for player in game
-                        .m_players
-                        .span() {
-                            let mut player_component: ComponentPlayer = world.read_model(*player);
-                            player_component.m_in_debt = Option::Some(2);
-                            world.write_model(@player_component);
-                        };
-                    world.write_model(@game);
-                },
-                EnumCard::SandwichAttack(_sandwich_attack_struct) => {
-                    let mut game: ComponentGame = world
-                        .read_model(world.dispatcher.contract_address);
-                    game.m_state = EnumGameState::WaitingForRent;
-                    for player in game
-                        .m_players
-                        .span() {
-                            let mut player_component: ComponentPlayer = world.read_model(*player);
-                            player_component.m_in_debt = Option::Some(5);
-                            world.write_model(@player_component);
-                        };
-                    world.write_model(@game);
-                },
-                EnumCard::GasFee(gas_fee_struct) => {
-                    match gas_fee_struct.m_blockchain_type_affected {
-                        EnumGasFeeType::Any(_) => {},
-                        EnumGasFeeType::AgainstTwo((
-                            color1, color2
-                        )) => {
-                            let mut color_found: bool = false;
-                            let mut index: usize = 0;
-                            while index < gas_fee_struct.m_set_applied.len() {
-                                let blockchain = gas_fee_struct.m_set_applied.at(index);
-                                if blockchain.m_bc_type == color1
-                                    || blockchain.m_bc_type == color2 {
-                                    color_found = true;
-                                }
-                                index += 1;
-                            };
-                            if !color_found {
-                                return ();
-                            }
-                        }
-                    };
-
-                    let fee: u8 = gas_fee_struct.get_fee();
-                    let mut game: ComponentGame = world
-                        .read_model(world.dispatcher.contract_address);
-                    game.m_state = EnumGameState::WaitingForRent;
-                    // Make every affected player in debt for their next turn.
-                    match gas_fee_struct.m_players_affected {
-                        EnumPlayerTarget::All(_) => {
-                            let mut index = 0;
-
-                            while index < game.m_players.len() {
-                                let mut player_component: ComponentPlayer = world
-                                    .read_model(*game.m_players.at(index));
-                                player_component.m_in_debt = Option::Some(fee);
-                                world.write_model(@player_component);
-                                index += 1;
-                            };
-                        },
-                        EnumPlayerTarget::One(player) => {
-                            let mut player_component: ComponentPlayer = world.read_model(*player);
-                            player_component.m_in_debt = Option::Some(fee);
-                            world.write_model(@player_component);
-                        },
-                        _ => panic!("Invalid Gas Fee move: No players targeted")
+                    for player in game.m_players.span() {
+                        let mut player_component: ComponentPlayer = world.read_model(*player);
+                        player_component.m_in_debt = Option::Some(2);
+                        world.write_model(@player_component);
                     };
                     world.write_model(@game);
-                },
-                EnumCard::PriorityFee(_priority_fee_struct) => {
-                    let mut dealer: ComponentDealer = world
-                        .read_model(world.dispatcher.contract_address);
-                    assert!(!dealer.m_cards.is_empty(), "Dealer has no more cards");
-
-                    let card_component1: ComponentCard = world
-                        .read_model(dealer.pop_card().unwrap());
-                    let card_component2: ComponentCard = world
-                        .read_model(dealer.pop_card().unwrap());
-                    hand.add(card_component1.m_card_info);
-                    hand.add(card_component2.m_card_info);
-                    world.write_model(@hand);
-                    world.write_model(@dealer);
-                },
-                //EnumCard::ReplayAttack(_replay_attack_struct) => {},
-                EnumCard::FrontRun(frontrun_struct) => {
-                    let bc_owner = self._get_owner(frontrun_struct.m_blockchain_name);
-                    assert!(bc_owner.is_some(), "Blockchain in Frontrun card has no owner");
-
-                    let mut opponent_deck: ComponentDeck = world.read_model(bc_owner.unwrap());
-                    if let Option::Some(card_index) = opponent_deck
-                        .contains(frontrun_struct.m_blockchain_name) {
-                        deck.add(opponent_deck.m_cards.at(card_index).clone());
-                        opponent_deck.remove(frontrun_struct.m_blockchain_name);
-                        world.write_model(@deck);
-                        world.write_model(@deck);
-                        world.write_model(@opponent_deck);
-                    } else {
-                        panic!("Invalid FrontRun move: Opponent Blockchain not found");
-                    }
                 },
                 EnumCard::FiftyOnePercentAttack(asset_group_struct) => {
-                    let mut opponent_deck: ComponentDeck = world
-                        .read_model(*asset_group_struct.m_owner);
+                    assert!(*asset_group_struct.m_player_targeted != starknet::contract_address_const::<0x0>(),
+                        "No player targeted");
+                    let mut opponent_deck: ComponentDeck = world.read_model(*asset_group_struct.m_player_targeted);
 
                     // Verify opponent has sets to steal
                     assert!(opponent_deck.m_sets > 0, "Opponent has no sets");
@@ -449,15 +357,146 @@ mod action_system {
                     world.write_model(@deck);
                     world.write_model(@opponent_deck);
                 },
+                EnumCard::FrontRun(frontrun_struct) => {
+                    assert!(*frontrun_struct.m_player_targeted != starknet::contract_address_const::<0x0>(),
+                            "No player targeted");
+                    let bc_owner = self._get_owner(frontrun_struct.m_blockchain_name, table);
+                    assert!(bc_owner.is_some(), "Blockchain in Frontrun card has no owner");
+
+                    let mut opponent_deck: ComponentDeck = world.read_model(*frontrun_struct.m_player_targeted);
+                    if let Option::Some(card_index) = opponent_deck
+                        .contains(frontrun_struct.m_blockchain_name) {
+                        deck.add(opponent_deck.m_cards.at(card_index).clone());
+                        opponent_deck.remove(frontrun_struct.m_blockchain_name);
+                        world.write_model(@deck);
+                        world.write_model(@deck);
+                        world.write_model(@opponent_deck);
+                    } else {
+                        panic!("Invalid Frontrun move: Opponent blockchain not found");
+                    }
+                },
+                EnumCard::GasFee(gas_fee_struct) => {
+                    match gas_fee_struct.m_blockchain_type_affected {
+                        EnumGasFeeType::Any(_) => {},
+                        EnumGasFeeType::AgainstTwo((
+                            color1, color2
+                        )) => {
+                            let mut color_found: bool = false;
+                            let mut index: usize = 0;
+                            while index < gas_fee_struct.m_set_applied.len() {
+                                let blockchain = gas_fee_struct.m_set_applied.at(index);
+                                if blockchain.m_bc_type == color1
+                                    || blockchain.m_bc_type == color2 {
+                                    color_found = true;
+                                }
+                                index += 1;
+                            };
+                            if !color_found {
+                                return ();
+                            }
+                        }
+                    };
+
+                    let fee: u8 = gas_fee_struct.get_fee();
+                    let mut game: ComponentGame = world.read_model(table);
+                    game.m_state = EnumGameState::WaitingForRent;
+                    // Make every affected player in debt for their next turn.
+                    match gas_fee_struct.m_players_affected {
+                        EnumPlayerTarget::All(_) => {
+                            let mut index = 0;
+
+                            while index < game.m_players.len() {
+                                let mut player_component: ComponentPlayer = world
+                                    .read_model(*game.m_players.at(index));
+                                player_component.m_in_debt = Option::Some(fee);
+                                world.write_model(@player_component);
+                                index += 1;
+                            };
+                        },
+                        EnumPlayerTarget::One(player) => {
+                            let mut player_component: ComponentPlayer = world.read_model(*player);
+                            player_component.m_in_debt = Option::Some(fee);
+                            world.write_model(@player_component);
+                        },
+                        _ => panic!("Invalid Gas Fee move: No players targeted")
+                    };
+                    world.write_model(@game);
+                },
+                EnumCard::PriorityFee(_priority_fee_struct) => {
+                    let mut dealer: ComponentDealer = world.read_model(table);
+                    assert!(!dealer.m_cards.is_empty(), "Dealer has no more cards");
+
+                    let card_component1: ComponentCard = world
+                        .read_model(dealer.pop_card().unwrap());
+                    let card_component2: ComponentCard = world
+                        .read_model(dealer.pop_card().unwrap());
+                    hand.add(card_component1.m_card_info);
+                    hand.add(card_component2.m_card_info);
+                    world.write_model(@hand);
+                    world.write_model(@dealer);
+                },
+                EnumCard::ReplayAttack(replay_attack_struct) => {
+                    // Retrieve last card played by player from the discard pile.
+                    if let Option::Some(last_card) = discard_pile.m_cards.get(discard_pile.m_cards.len() - 1) {
+                        let unboxed_card = last_card.unbox();
+                        match unboxed_card {
+                            EnumCard::GasFee(gas_fee_struct) => {
+                                if gas_fee_struct.m_owner == replay_attack_struct.m_owner {
+                                    let fee = gas_fee_struct.get_fee() * 2;
+                                    match gas_fee_struct.m_players_affected {
+                                        EnumPlayerTarget::All(_) => {
+                                            let mut index = 0;
+                                            let game: ComponentGame = world.read_model(table);
+
+                                            while index < game.m_players.len() {
+                                                let mut player_component: ComponentPlayer = world
+                                                    .read_model(*game.m_players.at(index));
+                                                player_component.m_in_debt = Option::Some(fee);
+                                                world.write_model(@player_component);
+                                                index += 1;
+                                            };
+                                        },
+                                        EnumPlayerTarget::One(player) => {
+                                            let mut player_component: ComponentPlayer = world.read_model(*player);
+                                            player_component.m_in_debt = Option::Some(fee);
+                                            world.write_model(@player_component);
+                                        },
+                                        _ => panic!("Invalid Gas Fee move: No players targeted")
+                                    };
+                                } else {
+                                    // Card played too late, potentially punish player...
+                                }
+                            },
+                            _ => {
+                                // Invalid card played with it, potentially punish player...
+                            }
+                        };
+                    }
+                },
+                EnumCard::SandwichAttack(_sandwich_attack_struct) => {
+                    let mut game: ComponentGame = world.read_model(table);
+                    game.m_state = EnumGameState::WaitingForRent;
+                    for player in game
+                        .m_players
+                        .span() {
+                            let mut player_component: ComponentPlayer = world.read_model(*player);
+                            player_component.m_in_debt = Option::Some(5);
+                            world.write_model(@player_component);
+                        };
+                    world.write_model(@game);
+                },
                 _ => panic!("Invalid or illegal move!")
             };
+
+            discard_pile.m_cards.append(card);
+            world.write_model(@discard_pile);
             world.write_model(@hand);
             return ();
         }
 
-        fn _get_owner(ref self: ContractState, card_name: @ByteArray) -> Option<ContractAddress> {
+        fn _get_owner(ref self: ContractState, card_name: @ByteArray, table: ContractAddress) -> Option<ContractAddress> {
             let mut world = self.world_default();
-            let game: ComponentGame = world.read_model(world.dispatcher.contract_address);
+            let game: ComponentGame = world.read_model(table);
             assert!(game.m_state == EnumGameState::Started, "Game has not started yet");
 
             let mut index = 0;
