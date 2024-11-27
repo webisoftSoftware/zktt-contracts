@@ -2,7 +2,13 @@ name: CI
 
 on:
   push:
+    paths:
+      - '**/*.cairo'
+      - '**/*.toml'
   pull_request:
+    paths:
+      - '**/*.cairo'
+      - '**/*.toml'
 
 jobs:
   sozo-test:
