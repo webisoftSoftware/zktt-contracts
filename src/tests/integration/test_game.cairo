@@ -28,7 +28,7 @@ use dojo_cairo_test::WorldStorageTestTrait;
 use dojo::model::Model;
 use dojo_cairo_test::{spawn_test_world, NamespaceDef, TestResource, ContractDefTrait};
 
-use crate::tests::utils::namespace_def;
+use crate::tests::utils::{deploy_world, namespace_def};
 use crate::tests::integration::test_player::deploy_player;
 use crate::tests::integration::test_actions::deploy_actions;
 
@@ -42,7 +42,7 @@ use crate::models::enums::{EnumGameState};
 use crate::models::traits::{ComponentPlayerDisplay, IDealer};
 
 // Deploy world with supplied components registered.
-pub fn deploy_game(ref world: WorldStorage) -> IGameSystemDispatcher {
+pub fn deploy_game(ref world: WorldStorage) -> (ContractAddress, IGameSystemDispatcher) {
     let (contract_address, _) = world.dns(@"game_system").unwrap();
 
     let system: IGameSystemDispatcher = IGameSystemDispatcher { contract_address };
@@ -62,64 +62,59 @@ pub fn deploy_game(ref world: WorldStorage) -> IGameSystemDispatcher {
     };
     world.write_model(@dealer);
 
-    return system;
+    return (contract_address, system);
 }
 
 #[test]
 fn test_start() {
     let first_caller: ContractAddress = starknet::contract_address_const::<0x0a>();
     let second_caller: ContractAddress = starknet::contract_address_const::<0x0b>();
-    let mut world: WorldStorage = spawn_test_world([namespace_def()].span());
-    let game_system: IGameSystemDispatcher = deploy_game(ref world);
+    let mut world: WorldStorage = deploy_world();
+    let (addr, _game_system): (ContractAddress, IGameSystemDispatcher) = deploy_game(ref world);
     let player_system: IPlayerSystemDispatcher = deploy_player(ref world);
 
     let mut dealer: ComponentDealer = world.read_model(world.dispatcher.contract_address);
     assert!(!dealer.m_cards.is_empty(), "Dealer should have cards!");
 
-    // Set player one as the next caller.
-    starknet::testing::set_contract_address(first_caller);
-    player_system.join("Player 1");
-
-    // Set player two as the next caller.
-    starknet::testing::set_contract_address(second_caller);
-    player_system.join("Player 2");
-
     // Provide deterministic seed
     starknet::testing::set_block_timestamp(240);
     starknet::testing::set_nonce(0x111);
 
-    // Start the game.
-    game_system.start();
+    // Set player one as the next caller.
+    starknet::testing::set_contract_address(first_caller);
+    player_system.join("Player 1", addr);
+    player_system.set_ready(true, addr);
+    starknet::testing::set_contract_address(second_caller);
+    player_system.join("Player 2", addr);
+    player_system.set_ready(true, addr);
+
+    let game: ComponentGame = world.read_model(addr);
+    assert!(game.m_state == EnumGameState::Started, "Game should have started!");
 
     // Check players' hands.
     let player1_hand: ComponentHand = world.read_model(first_caller);
     assert!(player1_hand.m_cards.len() == 5, "Player 1 should have received 5 cards!");
     let player2_hand: ComponentHand = world.read_model(second_caller);
     assert!(player2_hand.m_cards.len() == 5, "Player 2 should have received 5 cards!");
-
-    let game: ComponentGame = world.read_model(world.dispatcher.contract_address);
-    assert!(game.m_state == EnumGameState::Started, "Game should have started!");
 }
 
 #[test]
 fn test_new_turn() {
     let first_caller: ContractAddress = starknet::contract_address_const::<0x0a>();
     let second_caller: ContractAddress = starknet::contract_address_const::<0x0b>();
-    let mut world: WorldStorage = spawn_test_world([namespace_def()].span());
-    let game_system: IGameSystemDispatcher = deploy_game(ref world);
+    let mut world: WorldStorage = deploy_world();
+    let (addr, _game_system): (ContractAddress, IGameSystemDispatcher) = deploy_game(ref world);
     let player_system: IPlayerSystemDispatcher = deploy_player(ref world);
 
     // Set player one as the next caller.
     starknet::testing::set_contract_address(first_caller);
-    player_system.join("Player 1");
-
-    // Set player two as the next caller.
+    player_system.join("Player 1", addr);
+    player_system.set_ready(true, addr);
     starknet::testing::set_contract_address(second_caller);
-    player_system.join("Player 2");
+    player_system.join("Player 2", addr);
+    player_system.set_ready(true, addr);
 
-    game_system.start();
-
-    let game: ComponentGame = world.read_model(world.dispatcher.contract_address);
+    let game: ComponentGame = world.read_model(addr);
     assert!(game.m_player_in_turn == first_caller, "Player 1 should have started their turn!");
 }
 
@@ -127,28 +122,28 @@ fn test_new_turn() {
 fn test_end_turn() {
     let first_caller: ContractAddress = starknet::contract_address_const::<0x0a>();
     let second_caller: ContractAddress = starknet::contract_address_const::<0x0b>();
-    let mut world: WorldStorage = spawn_test_world([namespace_def()].span());
-    let game_system: IGameSystemDispatcher = deploy_game(ref world);
+    let mut world: WorldStorage = deploy_world();
+    let (addr, _game_system): (ContractAddress, IGameSystemDispatcher) = deploy_game(ref world);
     let player_system: IPlayerSystemDispatcher = deploy_player(ref world);
 
     // Setup game with two players
     starknet::testing::set_contract_address(first_caller);
-    player_system.join("Player 1");
+    player_system.join("Player 1", addr);
+    player_system.set_ready(true, addr);
     starknet::testing::set_contract_address(second_caller);
-    player_system.join("Player 2");
-
-    game_system.start();
+    player_system.join("Player 2", addr);
+    player_system.set_ready(true, addr);
 
     // Verify initial turn
-    let game: ComponentGame = world.read_model(world.dispatcher.contract_address);
+    let game: ComponentGame = world.read_model(addr);
     assert!(game.m_player_in_turn == first_caller, "Player 1 should start");
 
     // End turn as first player
     starknet::testing::set_contract_address(first_caller);
-    game_system.end_turn();
+    _game_system.end_turn(addr);
 
     // Verify turn passed to second player
-    let game: ComponentGame = world.read_model(world.dispatcher.contract_address);
+    let game: ComponentGame = world.read_model(addr);
     assert!(game.m_player_in_turn == second_caller, "Turn should pass to Player 2");
 }
 
@@ -156,10 +151,10 @@ fn test_end_turn() {
 #[should_panic(expected: ("Game has not started yet", 'ENTRYPOINT_FAILED'))]
 fn test_end_turn_before_game_starts() {
     let first_caller: ContractAddress = starknet::contract_address_const::<0x0a>();
-    let mut world: WorldStorage = spawn_test_world([namespace_def()].span());
-    let game_system: IGameSystemDispatcher = deploy_game(ref world);
+    let mut world: WorldStorage = deploy_world();
+    let (addr, _game_system): (ContractAddress, IGameSystemDispatcher) = deploy_game(ref world);
     starknet::testing::set_contract_address(first_caller);
-    game_system.end_turn();
+    _game_system.end_turn(addr);
 }
 
 #[test]
@@ -167,82 +162,85 @@ fn test_end_turn_before_game_starts() {
 fn test_end_turn_wrong_player() {
     let first_caller: ContractAddress = starknet::contract_address_const::<0x0a>();
     let second_caller: ContractAddress = starknet::contract_address_const::<0x0b>();
-    let mut world: WorldStorage = spawn_test_world([namespace_def()].span());
-    let game_system: IGameSystemDispatcher = deploy_game(ref world);
+    let mut world: WorldStorage = deploy_world();
+    let (addr, _game_system): (ContractAddress, IGameSystemDispatcher) = deploy_game(ref world);
     let player_system: IPlayerSystemDispatcher = deploy_player(ref world);
 
     // Setup game with two players
     starknet::testing::set_contract_address(first_caller);
-    player_system.join("Player 1");
+    player_system.join("Player 1", addr);
+    player_system.set_ready(true, addr);
     starknet::testing::set_contract_address(second_caller);
-    player_system.join("Player 2");
-
-    game_system.start();
+    player_system.join("Player 2", addr);
+    player_system.set_ready(true, addr);
 
     // Try to end turn as second player when it's first player's turn
     starknet::testing::set_contract_address(second_caller);
-    game_system.end_turn();
+    _game_system.end_turn(addr);
 }
 
 #[test]
 #[should_panic(expected: ("Missing at least a player before starting", 'ENTRYPOINT_FAILED'))]
 fn test_start_with_one_player() {
     let first_caller: ContractAddress = starknet::contract_address_const::<0x0a>();
-    let mut world: WorldStorage = spawn_test_world([namespace_def()].span());
-    let game_system: IGameSystemDispatcher = deploy_game(ref world);
+    let mut world: WorldStorage = deploy_world();
+    let (addr, _game_system): (ContractAddress, IGameSystemDispatcher) = deploy_game(ref world);
     let player_system: IPlayerSystemDispatcher = deploy_player(ref world);
 
     // Try to start with just one player
     starknet::testing::set_contract_address(first_caller);
-    player_system.join("Player 1");
-    game_system.start();
+    player_system.join("Player 1", addr);
+    player_system.set_ready(true, addr);
+
+    starknet::testing::set_contract_address(starknet::contract_address_const::<0x0>());
+    _game_system.start(addr);
 }
 
 #[test]
-#[should_panic(expected: ("Game has already started", 'ENTRYPOINT_FAILED'))]
+#[should_panic(expected: ("Game has already started or invalid game ID", 'ENTRYPOINT_FAILED'))]
 fn test_start_game_twice() {
     let first_caller: ContractAddress = starknet::contract_address_const::<0x0a>();
     let second_caller: ContractAddress = starknet::contract_address_const::<0x0b>();
-    let mut world: WorldStorage = spawn_test_world([namespace_def()].span());
-    let game_system: IGameSystemDispatcher = deploy_game(ref world);
+    let mut world: WorldStorage = deploy_world();
+    let (addr, _game_system): (ContractAddress, IGameSystemDispatcher) = deploy_game(ref world);
     let player_system: IPlayerSystemDispatcher = deploy_player(ref world);
 
     // Setup and start game normally
     starknet::testing::set_contract_address(first_caller);
-    player_system.join("Player 1");
+    player_system.join("Player 1", addr);
+    player_system.set_ready(true, addr);
     starknet::testing::set_contract_address(second_caller);
-    player_system.join("Player 2");
-
-    game_system.start();
+    player_system.join("Player 2", addr);
+    player_system.set_ready(true, addr);
 
     // Try to start again
-    game_system.start();
+    _game_system.start(addr);
 }
 
 #[test]
 fn test_full_turn_cycle() {
     let first_caller: ContractAddress = starknet::contract_address_const::<0x0a>();
     let second_caller: ContractAddress = starknet::contract_address_const::<0x0b>();
-    let mut world: WorldStorage = spawn_test_world([namespace_def()].span());
-    let game_system: IGameSystemDispatcher = deploy_game(ref world);
+    let mut world: WorldStorage = deploy_world();
+    let (addr, _game_system): (ContractAddress, IGameSystemDispatcher) = deploy_game(ref world);
     let player_system: IPlayerSystemDispatcher = deploy_player(ref world);
 
     // Setup game with two players
     starknet::testing::set_contract_address(first_caller);
-    player_system.join("Player 1");
+    player_system.join("Player 1", addr);
+    player_system.set_ready(true, addr);
     starknet::testing::set_contract_address(second_caller);
-    player_system.join("Player 2");
-
-    game_system.start();
+    player_system.join("Player 2", addr);
+    player_system.set_ready(true, addr);
 
     // Complete a full turn cycle
     starknet::testing::set_contract_address(first_caller);
-    game_system.end_turn();
+    _game_system.end_turn(addr);
 
     starknet::testing::set_contract_address(second_caller);
-    game_system.end_turn();
+    _game_system.end_turn(addr);
 
     // Verify turn returned to first player
-    let game: ComponentGame = world.read_model(world.dispatcher.contract_address);
+    let game: ComponentGame = world.read_model(addr);
     assert!(game.m_player_in_turn == first_caller, "Turn should cycle back to Player 1");
 }

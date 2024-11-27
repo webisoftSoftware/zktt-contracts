@@ -22,7 +22,7 @@
 use starknet::ContractAddress;
 use crate::models::structs::StructBlockchain;
 use crate::models::enums::{
-    EnumCard, EnumGameState, EnumBlockchainType, EnumGasFeeType, EnumPlayerTarget
+    EnumCard, EnumGameState, EnumColor, EnumGasFeeType, EnumPlayerTarget
 };
 use crate::models::components::{
     ComponentGame, ComponentHand, ComponentDeposit, ComponentPlayer, ComponentDeck, ComponentDealer
@@ -31,12 +31,12 @@ use crate::models::traits::{
     IAsset, IBlockchain, IClaimYield, ISandwichAttack, IGasFee, IPriorityFee, IFrontRun,
     IFiftyOnePercentAttack, IChainReorg, IHand, IDeck, ComponentDeckDisplay
 };
-use crate::tests::utils::namespace_def;
+use crate::tests::utils::{deploy_world, namespace_def};
 use crate::tests::integration::test_game::deploy_game;
 use crate::tests::integration::test_player::deploy_player;
 use crate::tests::integration::test_actions::deploy_actions;
 
-use crate::systems::game::{IGameSystemDispatcher, IGameSystemDispatcherTrait};
+use crate::systems::game::{game_system, IGameSystemDispatcher, IGameSystemDispatcherTrait};
 use crate::systems::player::{IPlayerSystemDispatcher, IPlayerSystemDispatcherTrait};
 use crate::systems::actions::{IActionSystemDispatcher, IActionSystemDispatcherTrait};
 
@@ -48,23 +48,24 @@ use dojo_cairo_test::{spawn_test_world, WorldStorageTestTrait};
 fn test_asset_card() {
     let first_caller: ContractAddress = starknet::contract_address_const::<0x0a>();
     let second_caller: ContractAddress = starknet::contract_address_const::<0x0b>();
-    let mut world: WorldStorage = spawn_test_world([namespace_def()].span());
+    let mut world: WorldStorage = deploy_world();
     let action_system = deploy_actions(ref world);
-    let _game_system = deploy_game(ref world);
+    let (addr, _game_system): (ContractAddress, IGameSystemDispatcher) = deploy_game(ref world);
     let player_system = deploy_player(ref world);
 
     // Setup game with two players
     starknet::testing::set_contract_address(first_caller);
-    player_system.join("Player 1");
+    player_system.join("Player 1", addr);
+    player_system.set_ready(true, addr);
     starknet::testing::set_contract_address(second_caller);
-    player_system.join("Player 2");
-    _game_system.start();
+    player_system.join("Player 2", addr);
+    player_system.set_ready(true, addr);
 
     // Set player one as the next caller
     starknet::testing::set_contract_address(first_caller);
 
     // Draw cards first
-    action_system.draw(false);
+    action_system.draw(false, addr);
 
     // Create and play asset card
     let mut hand: ComponentHand = world.read_model(first_caller);
@@ -73,7 +74,7 @@ fn test_asset_card() {
     world.write_model_test(@hand);
 
     // Play asset card
-    action_system.play(asset_card);
+    action_system.play(asset_card, addr);
 
     // Verify asset added to deposit
     let deposit: ComponentDeposit = world.read_model(first_caller);
@@ -84,32 +85,33 @@ fn test_asset_card() {
 fn test_blockchain_card() {
     let first_caller: ContractAddress = starknet::contract_address_const::<0x0a>();
     let second_caller: ContractAddress = starknet::contract_address_const::<0x0b>();
-    let mut world: WorldStorage = spawn_test_world([namespace_def()].span());
+    let mut world: WorldStorage = deploy_world();
     let action_system = deploy_actions(ref world);
-    let _game_system = deploy_game(ref world);
+    let (addr, _game_system): (ContractAddress, IGameSystemDispatcher) = deploy_game(ref world);
     let player_system = deploy_player(ref world);
 
     // Setup game with two players
     starknet::testing::set_contract_address(first_caller);
-    player_system.join("Player 1");
+    player_system.join("Player 1", addr);
+    player_system.set_ready(true, addr);
     starknet::testing::set_contract_address(second_caller);
-    player_system.join("Player 2");
-    _game_system.start();
+    player_system.join("Player 2", addr);
+    player_system.set_ready(true, addr);
 
     // Set player one as the next caller and draw cards
     starknet::testing::set_contract_address(first_caller);
-    action_system.draw(false);
+    action_system.draw(false, addr);
 
     // Create and play blockchain card
     let mut hand: ComponentHand = world.read_model(first_caller);
     let blockchain_card = EnumCard::Blockchain(
-        IBlockchain::new("Ethereum", EnumBlockchainType::DarkBlue, 3, 4)
+        IBlockchain::new("Ethereum", EnumColor::DarkBlue, 3, 4)
     );
     hand.add(blockchain_card.clone());
     world.write_model_test(@hand);
 
     // Play blockchain card
-    action_system.play(blockchain_card);
+    action_system.play(blockchain_card, addr);
 
     // Verify blockchain added to deck
     let deck: ComponentDeck = world.read_model(first_caller);
@@ -120,31 +122,32 @@ fn test_blockchain_card() {
 fn test_claim_yield_card() {
     let first_caller: ContractAddress = starknet::contract_address_const::<0x0a>();
     let second_caller: ContractAddress = starknet::contract_address_const::<0x0b>();
-    let mut world: WorldStorage = spawn_test_world([namespace_def()].span());
+    let mut world: WorldStorage = deploy_world();
     let action_system = deploy_actions(ref world);
-    let _game_system = deploy_game(ref world);
+    let (addr, _game_system): (ContractAddress, IGameSystemDispatcher) = deploy_game(ref world);
     let player_system = deploy_player(ref world);
 
     // Setup game with two players
     starknet::testing::set_contract_address(first_caller);
-    player_system.join("Player 1");
+    player_system.join("Player 1", addr);
+    player_system.set_ready(true, addr);
     starknet::testing::set_contract_address(second_caller);
-    player_system.join("Player 2");
-    _game_system.start();
+    player_system.join("Player 2", addr);
+    player_system.set_ready(true, addr);
 
     // Set player one as the next caller and draw cards first
     starknet::testing::set_contract_address(first_caller);
-    action_system.draw(false);
+    action_system.draw(false, addr);
 
     // Play ClaimYield card
     let mut hand: ComponentHand = world.read_model(first_caller);
     let claim_yield_card = EnumCard::ClaimYield(IClaimYield::new(2, 3));
     hand.add(claim_yield_card.clone());
     world.write_model_test(@hand);
-    action_system.play(claim_yield_card);
+    action_system.play(claim_yield_card, addr);
 
     // Verify effects
-    let game: ComponentGame = world.read_model(world.dispatcher.contract_address);
+    let game: ComponentGame = world.read_model(addr);
     assert!(game.m_state == EnumGameState::WaitingForRent, "Game should be waiting for rent");
 
     let player2: ComponentPlayer = world.read_model(second_caller);
@@ -155,31 +158,32 @@ fn test_claim_yield_card() {
 fn test_sandwich_attack_card() {
     let first_caller: ContractAddress = starknet::contract_address_const::<0x0a>();
     let second_caller: ContractAddress = starknet::contract_address_const::<0x0b>();
-    let mut world: WorldStorage = spawn_test_world([namespace_def()].span());
+    let mut world: WorldStorage = deploy_world();
     let action_system = deploy_actions(ref world);
-    let _game_system = deploy_game(ref world);
+    let (addr, _game_system): (ContractAddress, IGameSystemDispatcher) = deploy_game(ref world);
     let player_system = deploy_player(ref world);
 
     // Setup game with two players
     starknet::testing::set_contract_address(first_caller);
-    player_system.join("Player 1");
+    player_system.join("Player 1", addr);
+    player_system.set_ready(true, addr);
     starknet::testing::set_contract_address(second_caller);
-    player_system.join("Player 2");
-    _game_system.start();
+    player_system.join("Player 2", addr);
+    player_system.set_ready(true, addr);
 
     // Set player one as the next caller and draw cards
     starknet::testing::set_contract_address(first_caller);
-    action_system.draw(false);
+    action_system.draw(false, addr);
 
     // Play SandwichAttack card
     let mut hand: ComponentHand = world.read_model(first_caller);
-    let sandwich_attack_card = EnumCard::SandwichAttack(ISandwichAttack::new(3, 3));
+    let sandwich_attack_card = EnumCard::SandwichAttack(ISandwichAttack::new(second_caller, 3, 3));
     hand.add(sandwich_attack_card.clone());
     world.write_model_test(@hand);
-    action_system.play(sandwich_attack_card);
+    action_system.play(sandwich_attack_card, addr);
 
     // Verify effects
-    let game: ComponentGame = world.read_model(world.dispatcher.contract_address);
+    let game: ComponentGame = world.read_model(addr);
     assert!(game.m_state == EnumGameState::WaitingForRent, "Game should be waiting for rent");
 
     let player2: ComponentPlayer = world.read_model(second_caller);
@@ -190,21 +194,22 @@ fn test_sandwich_attack_card() {
 fn test_gas_fee_card() {
     let first_caller: ContractAddress = starknet::contract_address_const::<0x0a>();
     let second_caller: ContractAddress = starknet::contract_address_const::<0x0b>();
-    let mut world: WorldStorage = spawn_test_world([namespace_def()].span());
+    let mut world: WorldStorage = deploy_world();
     let action_system = deploy_actions(ref world);
-    let _game_system = deploy_game(ref world);
+    let (addr, _game_system): (ContractAddress, IGameSystemDispatcher) = deploy_game(ref world);
     let player_system = deploy_player(ref world);
 
     // Setup game with two players
     starknet::testing::set_contract_address(first_caller);
-    player_system.join("Player 1");
+    player_system.join("Player 1", addr);
+    player_system.set_ready(true, addr);
     starknet::testing::set_contract_address(second_caller);
-    player_system.join("Player 2");
-    _game_system.start();
+    player_system.join("Player 2", addr);
+    player_system.set_ready(true, addr);
 
     // Set player one as the next caller and draw cards
     starknet::testing::set_contract_address(first_caller);
-    action_system.draw(false);
+    action_system.draw(false, addr);
 
     // Create GasFee card targeting specific color
     let mut hand: ComponentHand = world.read_model(first_caller);
@@ -215,7 +220,7 @@ fn test_gas_fee_card() {
             array![
                 StructBlockchain {
                     m_name: "Ethereum",
-                    m_bc_type: EnumBlockchainType::DarkBlue,
+                    m_bc_type: EnumColor::DarkBlue,
                     m_fee: 3,
                     m_value: 4
                 }
@@ -229,10 +234,10 @@ fn test_gas_fee_card() {
     world.write_model_test(@hand);
 
     // Play GasFee card
-    action_system.play(gas_fee_card);
+    action_system.play(gas_fee_card, addr);
 
     // Verify effects
-    let game: ComponentGame = world.read_model(world.dispatcher.contract_address);
+    let game: ComponentGame = world.read_model(addr);
     assert!(game.m_state == EnumGameState::WaitingForRent, "Game should be waiting for rent");
 }
 
@@ -240,21 +245,22 @@ fn test_gas_fee_card() {
 fn test_priority_fee_card() {
     let first_caller: ContractAddress = starknet::contract_address_const::<0x0a>();
     let second_caller: ContractAddress = starknet::contract_address_const::<0x0b>();
-    let mut world: WorldStorage = spawn_test_world([namespace_def()].span());
+    let mut world: WorldStorage = deploy_world();
     let action_system = deploy_actions(ref world);
-    let _game_system = deploy_game(ref world);
+    let (addr, _game_system): (ContractAddress, IGameSystemDispatcher) = deploy_game(ref world);
     let player_system = deploy_player(ref world);
 
     // Setup game with two players
     starknet::testing::set_contract_address(first_caller);
-    player_system.join("Player 1");
+    player_system.join("Player 1", addr);
+    player_system.set_ready(true, addr);
     starknet::testing::set_contract_address(second_caller);
-    player_system.join("Player 2");
-    _game_system.start();
+    player_system.join("Player 2", addr);
+    player_system.set_ready(true, addr);
 
     // Set player one as the next caller and draw cards
     starknet::testing::set_contract_address(first_caller);
-    action_system.draw(false);
+    action_system.draw(false, addr);
 
     // Play PriorityFee card
     let mut hand: ComponentHand = world.read_model(first_caller);
@@ -263,7 +269,7 @@ fn test_priority_fee_card() {
     world.write_model_test(@hand);
 
     let initial_hand_size = hand.m_cards.len();
-    action_system.play(priority_fee_card);
+    action_system.play(priority_fee_card, addr);
 
     // Verify player drew 2 additional cards
     let hand_after: ComponentHand = world.read_model(first_caller);
@@ -277,21 +283,22 @@ fn test_priority_fee_card() {
 fn test_frontrun_card() {
     let first_caller: ContractAddress = starknet::contract_address_const::<0x0a>();
     let second_caller: ContractAddress = starknet::contract_address_const::<0x0b>();
-    let mut world: WorldStorage = spawn_test_world([namespace_def()].span());
+    let mut world: WorldStorage = deploy_world();
     let action_system = deploy_actions(ref world);
-    let _game_system = deploy_game(ref world);
+    let (addr, _game_system): (ContractAddress, IGameSystemDispatcher) = deploy_game(ref world);
     let player_system = deploy_player(ref world);
 
     // Setup game with two players
     starknet::testing::set_contract_address(first_caller);
-    player_system.join("Player 1");
+    player_system.join("Player 1", addr);
+    player_system.set_ready(true, addr);
     starknet::testing::set_contract_address(second_caller);
-    player_system.join("Player 2");
-    _game_system.start();
+    player_system.join("Player 2", addr);
+    player_system.set_ready(true, addr);
 
     // Setup target blockchain in player 2's deck
     let target_blockchain = EnumCard::Blockchain(
-        IBlockchain::new("Ethereum", EnumBlockchainType::DarkBlue, 3, 4)
+        IBlockchain::new("Ethereum", EnumColor::DarkBlue, 3, 4)
     );
     let mut player2_deck: ComponentDeck = world.read_model(second_caller);
     player2_deck.add(target_blockchain.clone());
@@ -299,14 +306,14 @@ fn test_frontrun_card() {
 
     // Set player one as the next caller and draw cards first
     starknet::testing::set_contract_address(first_caller);
-    action_system.draw(false);
+    action_system.draw(false, addr);
 
     // Play FrontRun card from player 1
     let mut hand: ComponentHand = world.read_model(first_caller);
-    let frontrun_card = EnumCard::FrontRun(IFrontRun::new("Ethereum", 3, 3));
+    let frontrun_card = EnumCard::FrontRun(IFrontRun::new(second_caller, "Ethereum", 3, 3));
     hand.add(frontrun_card.clone());
     world.write_model_test(@hand);
-    action_system.play(frontrun_card);
+    action_system.play(frontrun_card, addr);
 
     // Verify blockchain was stolen
     let player1_deck: ComponentDeck = world.read_model(first_caller);
@@ -319,28 +326,29 @@ fn test_frontrun_card() {
 fn test_chain_reorg_card() {
     let first_caller: ContractAddress = starknet::contract_address_const::<0x0a>();
     let second_caller: ContractAddress = starknet::contract_address_const::<0x0b>();
-    let mut world: WorldStorage = spawn_test_world([namespace_def()].span());
+    let mut world: WorldStorage = deploy_world();
     let action_system = deploy_actions(ref world);
-    let _game_system = deploy_game(ref world);
+    let (addr, _game_system): (ContractAddress, IGameSystemDispatcher) = deploy_game(ref world);
     let player_system = deploy_player(ref world);
 
     // Setup game with two players
     starknet::testing::set_contract_address(first_caller);
-    player_system.join("Player 1");
+    player_system.join("Player 1", addr);
+    player_system.set_ready(true, addr);
     starknet::testing::set_contract_address(second_caller);
-    player_system.join("Player 2");
-    _game_system.start();
+    player_system.join("Player 2", addr);
+    player_system.set_ready(true, addr);
 
     // Set player one as the next caller and draw cards
     starknet::testing::set_contract_address(first_caller);
-    action_system.draw(false);
+    action_system.draw(false, addr);
 
     // Setup blockchains to swap
     let blockchain1 = EnumCard::Blockchain(
-        IBlockchain::new("Ethereum", EnumBlockchainType::DarkBlue, 3, 4)
+        IBlockchain::new("Ethereum", EnumColor::DarkBlue, 3, 4)
     );
     let blockchain2 = EnumCard::Blockchain(
-        IBlockchain::new("Bitcoin", EnumBlockchainType::Gold, 1, 2)
+        IBlockchain::new("Bitcoin", EnumColor::Gold, 1, 2)
     );
 
     // Add blockchains to respective decks
@@ -359,7 +367,7 @@ fn test_chain_reorg_card() {
 
     hand.add(chain_reorg_card.clone());
     world.write_model_test(@hand);
-    action_system.play(chain_reorg_card);
+    action_system.play(chain_reorg_card, addr);
 
     // Verify blockchains were swapped
     let player1_deck_after: ComponentDeck = world.read_model(first_caller);
@@ -372,38 +380,39 @@ fn test_chain_reorg_card() {
 fn test_fifty_one_percent_attack_card() {
     let first_caller: ContractAddress = starknet::contract_address_const::<0x0a>();
     let second_caller: ContractAddress = starknet::contract_address_const::<0x0b>();
-    let mut world: WorldStorage = spawn_test_world([namespace_def()].span());
+    let mut world: WorldStorage = deploy_world();
     let action_system = deploy_actions(ref world);
-    let _game_system = deploy_game(ref world);
+    let (addr, _game_system): (ContractAddress, IGameSystemDispatcher) = deploy_game(ref world);
     let player_system = deploy_player(ref world);
 
     // Setup game with two players
     starknet::testing::set_contract_address(first_caller);
-    player_system.join("Player 1");
+    player_system.join("Player 1", addr);
+    player_system.set_ready(true, addr);
     starknet::testing::set_contract_address(second_caller);
-    player_system.join("Player 2");
-    _game_system.start();
+    player_system.join("Player 2", addr);
+    player_system.set_ready(true, addr);
 
     // Setup target asset group in player 2's deck
     let blockchain_set: Array<StructBlockchain> = array![
-        IBlockchain::new("Ethereum", EnumBlockchainType::DarkBlue, 3, 4),
-        IBlockchain::new("Starknet", EnumBlockchainType::DarkBlue, 3, 4)
+        IBlockchain::new("Ethereum", EnumColor::DarkBlue, 3, 4),
+        IBlockchain::new("Starknet", EnumColor::DarkBlue, 3, 4)
     ];
 
     let mut player2_deck: ComponentDeck = world.read_model(second_caller);
     player2_deck
         .add(
-            EnumCard::Blockchain(IBlockchain::new("Ethereum", EnumBlockchainType::DarkBlue, 3, 4))
+            EnumCard::Blockchain(IBlockchain::new("Ethereum", EnumColor::DarkBlue, 3, 4))
         );
     player2_deck
         .add(
-            EnumCard::Blockchain(IBlockchain::new("Starknet", EnumBlockchainType::DarkBlue, 3, 4))
+            EnumCard::Blockchain(IBlockchain::new("Starknet", EnumColor::DarkBlue, 3, 4))
         );
     world.write_model_test(@player2_deck);
 
     // Set player one as the next caller and draw cards first
     starknet::testing::set_contract_address(first_caller);
-    action_system.draw(false);
+    action_system.draw(false, addr);
 
     // Play FiftyOnePercentAttack card
     let mut hand: ComponentHand = world.read_model(first_caller);
@@ -412,7 +421,7 @@ fn test_fifty_one_percent_attack_card() {
     );
     hand.add(fifty_one_percent_card.clone());
     world.write_model_test(@hand);
-    action_system.play(fifty_one_percent_card);
+    action_system.play(fifty_one_percent_card, addr);
 
     // Verify asset group was stolen
     let player1_deck: ComponentDeck = world.read_model(first_caller);
