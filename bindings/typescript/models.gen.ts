@@ -83,7 +83,7 @@ export interface StructAsset {
 export interface StructBlockchain {
 	fieldOrder: string[];
 	m_name: string;
-	m_bc_type: EnumBlockchainType;
+	m_bc_type: EnumColor;
 	m_fee: number;
 	m_value: number;
 }
@@ -152,7 +152,7 @@ export interface ComponentDeck {
 export interface StructBlockchain {
 	fieldOrder: string[];
 	m_name: string;
-	m_bc_type: EnumBlockchainType;
+	m_bc_type: EnumColor;
 	m_fee: number;
 	m_value: number;
 }
@@ -256,7 +256,7 @@ export interface ActionPriorityFee {
 export interface StructBlockchain {
 	fieldOrder: string[];
 	m_name: string;
-	m_bc_type: EnumBlockchainType;
+	m_bc_type: EnumColor;
 	m_fee: number;
 	m_value: number;
 }
@@ -378,7 +378,7 @@ export interface StructAsset {
 export interface StructBlockchain {
 	fieldOrder: string[];
 	m_name: string;
-	m_bc_type: EnumBlockchainType;
+	m_bc_type: EnumColor;
 	m_fee: number;
 	m_value: number;
 }
@@ -435,8 +435,8 @@ export interface ComponentPlayerValue {
 	m_in_debt: Option;
 }
 
-// Type definition for `zktt::models::enums::EnumBlockchainType` enum
-export enum EnumBlockchainType {
+// Type definition for `zktt::models::enums::EnumColor` enum
+export enum EnumColor {
 	Blue,
 	DarkBlue,
 	Gold,
@@ -540,7 +540,7 @@ export const schema: ZkttSchemaType = {
 		ActionFiftyOnePercentAttack: {
 			fieldOrder: ['m_owner', 'm_set', 'm_value', 'm_index'],
 			m_owner: "",
-			m_set: [{ fieldOrder: ['m_name', 'm_bc_type', 'm_fee', 'm_value'], m_name: "", m_bc_type: EnumBlockchainType, m_fee: 0, m_value: 0, }],
+			m_set: [{ fieldOrder: ['m_name', 'm_bc_type', 'm_fee', 'm_value'], m_name: "", m_bc_type: EnumColor, m_fee: 0, m_value: 0, }],
 			m_value: 0,
 			m_index: 0,
 		},
@@ -553,7 +553,7 @@ export const schema: ZkttSchemaType = {
 			fieldOrder: ['m_players_affected', 'm_blockchain_type_affected', 'm_set_applied', 'm_value', 'm_index'],
 			m_players_affected: EnumPlayerTarget.All,
 			m_blockchain_type_affected: EnumGasFeeType.Any,
-			m_set_applied: [{ fieldOrder: ['m_name', 'm_bc_type', 'm_fee', 'm_value'], m_name: "", m_bc_type: EnumBlockchainType, m_fee: 0, m_value: 0, }],
+			m_set_applied: [{ fieldOrder: ['m_name', 'm_bc_type', 'm_fee', 'm_value'], m_name: "", m_bc_type: EnumColor, m_fee: 0, m_value: 0, }],
 			m_value: 0,
 			m_index: 0,
 		},
@@ -579,7 +579,7 @@ export const schema: ZkttSchemaType = {
 		StructBlockchain: {
 			fieldOrder: ['m_name', 'm_bc_type', 'm_fee', 'm_value'],
 			m_name: "",
-			m_bc_type: EnumBlockchainType.Blue,
+			m_bc_type: EnumColor.Blue,
 			m_fee: 0,
 			m_value: 0,
 		},

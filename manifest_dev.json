@@ -1312,7 +1312,7 @@
         },
         {
           "type": "enum",
-          "name": "zktt::models::enums::EnumBlockchainType",
+          "name": "zktt::models::enums::EnumColor",
           "variants": [
             {
               "name": "Blue",
@@ -1366,7 +1366,7 @@
             },
             {
               "name": "m_bc_type",
-              "type": "zktt::models::enums::EnumBlockchainType"
+              "type": "zktt::models::enums::EnumColor"
             },
             {
               "name": "m_fee",
@@ -1446,7 +1446,7 @@
             },
             {
               "name": "AgainstTwo",
-              "type": "(zktt::models::enums::EnumBlockchainType, zktt::models::enums::EnumBlockchainType)"
+              "type": "(zktt::models::enums::EnumColor, zktt::models::enums::EnumColor)"
             }
           ]
         },
