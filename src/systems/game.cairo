@@ -25,7 +25,10 @@ mod game_system {
     use zktt::models::traits::{
         IEnumCard, IPlayer, ICard, IDeck, IDealer, IHand, IGasFee, IAssetGroup, IGame,
         IAsset, IBlockchain, IDeposit, IClaimYield, IFiftyOnePercentAttack, IChainReorg, IFrontRun,
-        ISandwichAttack, IPriorityFee, IReplayAttack, IHardFork, ISoftFork, IMEVBoost
+        IHybridBlockchain,ISandwichAttack, IPriorityFee, IReplayAttack, IHardFork, ISoftFork, IMEVBoost,
+        ClaimYieldDefault, ChainReorgDefault, FrontrunDefault, MEVBoostDefault, PriorityFeeDefault,
+        FiftyOnePercentAttackDefault, HardForkDefault, SoftForkDefault, ReplayAttackDefault,
+        SandwichAttackDefault, EnumCardDisplay
     };
     use zktt::models::enums::{
         EnumGasFeeType, EnumPlayerTarget, EnumGameState, EnumColor, EnumCard
@@ -56,7 +59,7 @@ mod game_system {
         fn start(ref self: ContractState, table: ContractAddress) -> () {
             let mut world = InternalImpl::world_default(@self);
             let mut game: ComponentGame = world.read_model(table);
-            assert!(game.m_state != EnumGameState::Started, "Game has already started or invalid game ID");
+            assert!(game.m_state != EnumGameState::Started, "Game has already started");
             assert!(game.m_players.len() >= 2, "Missing at least a player before starting");
             assert!(player_system::InternalImpl::_is_everyone_ready(@world, table), "Everyone needs to be ready");
 
@@ -79,15 +82,7 @@ mod game_system {
             let mut dealer: ComponentDealer = world.read_model(table);
             dealer.shuffle(seed);
 
-            let mut card_array: Array<EnumCard> = ArrayTrait::new();
-            for card_index in dealer
-                .m_cards
-                .span() {
-                    let card_component: ComponentCard = world.read_model(*card_index);
-                    card_array.append(card_component.m_card_info);
-                };
-
-            InternalImpl::_distribute_cards(ref world, ref game.m_players, ref card_array);
+            InternalImpl::_distribute_cards(ref world, ref game.m_players, ref dealer.m_cards);
 
             game.assign_next_turn(true);
             world.write_model(@dealer);
@@ -192,7 +187,7 @@ mod game_system {
         /// None.
         /// Can Panic?: yes
         fn _distribute_cards(
-            ref world: dojo::world::WorldStorage, ref players: Array<ContractAddress>, ref cards: Array<EnumCard>
+            ref world: dojo::world::WorldStorage, ref players: Array<ContractAddress>, ref cards: Array<u32>
         ) -> () {
             if players.is_empty() {
                 panic!("There are no players to distribute cards to!");
@@ -205,8 +200,9 @@ mod game_system {
                 let mut player_hand: ComponentHand = world.read_model(player.unbox().clone());
                 let mut inner_index: usize = 0;
                 while inner_index < 5 {
-                    if let Option::Some(card_given) = cards.pop_front() {
-                        player_hand.add(card_given);
+                    if let Option::Some(card_index) = cards.pop_front() {
+                        let card_component: ComponentCard = world.read_model(card_index);
+                        player_hand.add(card_component.m_card_info);
                     }
                     inner_index += 1;
                 };
@@ -221,9 +217,9 @@ mod game_system {
         /// None.
         ///
         /// Output:
-        /// The deck with one copy of all the card types (unflatten) [59].
-        /// Can Panic?: no
-        fn _create_cards() -> Array<EnumCard> nopanic {
+        /// The deck with one copy of all the card types.
+        /// Can Panic?: Yes
+        fn _create_cards() -> Array<EnumCard> {
             // Step 1: Create cards and put them in a container in order.
             let cards_in_order: Array<EnumCard> =  // Eth.
             array![
@@ -234,6 +230,7 @@ mod game_system {
                 EnumCard::Asset(IAsset::new("ETH [5]", 5, 2)),
                 EnumCard::Asset(IAsset::new("ETH [10]", 10, 1)),
                 // Blockchains.
+                EnumCard::Blockchain(IBlockchain::new("TBC", EnumColor::Immutable, 0, 0)),
                 EnumCard::Blockchain(IBlockchain::new("Aptos", EnumColor::Grey, 1, 2)),
                 EnumCard::Blockchain(IBlockchain::new("Arbitrum", EnumColor::LightBlue, 1, 2)),
                 EnumCard::Blockchain(IBlockchain::new("Avalanche", EnumColor::Red, 2, 4)),
@@ -262,11 +259,33 @@ mod game_system {
                 EnumCard::Blockchain(IBlockchain::new("Taiko", EnumColor::Pink, 1, 1)),
                 EnumCard::Blockchain(IBlockchain::new("Ton", EnumColor::Blue, 1, 1)),
                 EnumCard::Blockchain(IBlockchain::new("ZKSync", EnumColor::Grey, 1, 2)),
+                // Hybrid Blockchains.
+                // Pink + Blue.
+                EnumCard::HybridBlockchain(IHybridBlockchain::new("Moonbeam & Tezos", array![IBlockchain::new("Osmosis", EnumColor::Pink, 1, 1),
+                    IBlockchain::new("Ton", EnumColor::Blue, 1, 1)], 0)),
+                // Pink + Light Blue.
+                EnumCard::HybridBlockchain(IHybridBlockchain::new("Unichain + Zora", array![IBlockchain::new("Polkadot", EnumColor::Pink, 1, 1),
+                    IBlockchain::new("Metis", EnumColor::LightBlue, 1, 2)], 0)),
+                // LightBlue + Gold.
+                EnumCard::HybridBlockchain(IHybridBlockchain::new("Sui + BSC", array![IBlockchain::new("Fantom", EnumColor::LightBlue, 1, 2),
+                    IBlockchain::new("Dogecoin", EnumColor::Gold, 1, 2)], 0)),
+                // LightBlue + Red.
+                EnumCard::HybridBlockchain(IHybridBlockchain::new("Cardano + Tron", array![IBlockchain::new("Base", EnumColor::LightBlue, 1, 2),
+                    IBlockchain::new("Avalanche", EnumColor::Red, 2, 4)], 0)),
+                // Red + DarkBlue.
+                EnumCard::HybridBlockchain(IHybridBlockchain::new("Sei + Hyperliquid", array![IBlockchain::new("Optimism", EnumColor::Red, 2, 4),
+                    IBlockchain::new("Starknet", EnumColor::DarkBlue, 3, 4)], 0)),
+                // Yellow + Purple.
+                EnumCard::HybridBlockchain(IHybridBlockchain::new("Terra + Pulse", array![IBlockchain::new("Celo", EnumColor::Yellow, 2, 3),
+                    IBlockchain::new("Polygon", EnumColor::Purple, 2, 3)], 0)),
+                // Grey + Green.
+                EnumCard::HybridBlockchain(IHybridBlockchain::new("Algorand + Flow", array![IBlockchain::new("ZKSync", EnumColor::Grey, 1, 2),
+                    IBlockchain::new("Canto", EnumColor::Green, 1, 1)], 0)),
                 // Actions.
-                EnumCard::ChainReorg(IChainReorg::default()),
-                EnumCard::ClaimYield(IClaimYield::default()),
-                EnumCard::FiftyOnePercentAttack(IFiftyOnePercentAttack::default()),
-                EnumCard::FrontRun(IFrontRun::default()),
+                EnumCard::ChainReorg(Default::default()),
+                EnumCard::ClaimYield(Default::default()),
+                EnumCard::FiftyOnePercentAttack(Default::default()),
+                EnumCard::FrontRun(Default::default()),
                 EnumCard::GasFee(
                     IGasFee::new(
                         EnumPlayerTarget::All,
@@ -318,12 +337,12 @@ mod game_system {
                         EnumGasFeeType::Any(()),
                         array![], 3, 3)
                 ),
-                EnumCard::HardFork(IHardFork::default()),
-                EnumCard::MEVBoost(IMEVBoost::default()),
-                EnumCard::PriorityFee(IPriorityFee::default()),
-                EnumCard::ReplayAttack(IReplayAttack::default()),
-                EnumCard::SandwichAttack(ISandwichAttack::default()),
-                EnumCard::SoftFork(ISoftFork::default()),
+                EnumCard::HardFork(Default::default()),
+                EnumCard::MEVBoost(Default::default()),
+                EnumCard::PriorityFee(Default::default()),
+                EnumCard::ReplayAttack(Default::default()),
+                EnumCard::SandwichAttack(Default::default()),
+                EnumCard::SoftFork(Default::default()),
             ];
 
             return cards_in_order;
@@ -345,10 +364,11 @@ mod game_system {
             let mut flattened_array = ArrayTrait::new();
 
             while let Option::Some(mut card) = container.pop_front() {
-                let mut index_left: u8 = card.get_index();
-                while index_left > 0 {
-                    flattened_array.append(card.remove_one_index());
-                    index_left -= 1;
+                let mut card_copies_left = card.get_index();
+                while card_copies_left > 0 {
+                    flattened_array.append(card.clone());
+                    card.remove_one_index();
+                    card_copies_left -= 1;
                 };
             };
             return flattened_array;
