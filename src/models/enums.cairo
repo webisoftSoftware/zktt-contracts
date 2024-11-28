@@ -10,9 +10,9 @@
 use starknet::ContractAddress;
 use zktt::models::structs::{StructAsset, StructBlockchain, StructHybridBlockchain};
 use zktt::models::actions::{
-    ActionChainReorg, ActionClaimYield, ActionFrontrun, ActionPriorityFee,
-    ActionReplayAttack, ActionGasFee, ActionFiftyOnePercentAttack, ActionSandwichAttack, ActionHardFork,
-    ActionMEVBoost, ActionSoftFork
+    ActionChainReorg, ActionClaimYield, ActionFrontrun, ActionPriorityFee, ActionReplayAttack,
+    ActionGasFee, ActionFiftyOnePercentAttack, ActionSandwichAttack, ActionHardFork, ActionMEVBoost,
+    ActionSoftFork
 };
 use zktt::models::traits::{
     StructAssetEq, StructAssetGroupEq, StructBlockchainEq, StructHybridBlockchainEq,
@@ -108,7 +108,7 @@ pub enum EnumMoveError {
 
 #[derive(Drop, Serde, Copy, PartialEq, Debug)]
 pub enum EnumHardForkErrors {
-    InvalidCard,        // When card played against is not an onchain event targeting owner of the card.
-    TooLate             // When card is played too late (after 10 secs).
+    InvalidCard, // When card played against is not an onchain event targeting owner of the card.
+    TooLate // When card is played too late (after 10 secs).
 }
 

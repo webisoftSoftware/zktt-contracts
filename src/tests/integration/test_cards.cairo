@@ -21,9 +21,7 @@
 
 use starknet::ContractAddress;
 use crate::models::structs::StructBlockchain;
-use crate::models::enums::{
-    EnumCard, EnumGameState, EnumColor, EnumGasFeeType, EnumPlayerTarget
-};
+use crate::models::enums::{EnumCard, EnumGameState, EnumColor, EnumGasFeeType, EnumPlayerTarget};
 use crate::models::components::{
     ComponentGame, ComponentHand, ComponentDeposit, ComponentPlayer, ComponentDeck, ComponentDealer
 };
@@ -220,10 +218,7 @@ fn test_gas_fee_card() {
             EnumGasFeeType::Any,
             array![
                 StructBlockchain {
-                    m_name: "Ethereum",
-                    m_bc_type: EnumColor::DarkBlue,
-                    m_fee: 3,
-                    m_value: 4
+                    m_name: "Ethereum", m_bc_type: EnumColor::DarkBlue, m_fee: 3, m_value: 4
                 }
             ],
             3,
@@ -345,12 +340,8 @@ fn test_chain_reorg_card() {
     action_system.draw(false, addr);
 
     // Setup blockchains to swap
-    let blockchain1 = EnumCard::Blockchain(
-        IBlockchain::new("Ethereum", EnumColor::DarkBlue, 3, 4)
-    );
-    let blockchain2 = EnumCard::Blockchain(
-        IBlockchain::new("Bitcoin", EnumColor::Gold, 1, 2)
-    );
+    let blockchain1 = EnumCard::Blockchain(IBlockchain::new("Ethereum", EnumColor::DarkBlue, 3, 4));
+    let blockchain2 = EnumCard::Blockchain(IBlockchain::new("Bitcoin", EnumColor::Gold, 1, 2));
 
     // Add blockchains to respective decks
     let mut player1_deck: ComponentDeck = world.read_model(first_caller);
@@ -401,14 +392,8 @@ fn test_fifty_one_percent_attack_card() {
     ];
 
     let mut player2_deck: ComponentDeck = world.read_model(second_caller);
-    player2_deck
-        .add(
-            EnumCard::Blockchain(IBlockchain::new("Ethereum", EnumColor::DarkBlue, 3, 4))
-        );
-    player2_deck
-        .add(
-            EnumCard::Blockchain(IBlockchain::new("Starknet", EnumColor::DarkBlue, 3, 4))
-        );
+    player2_deck.add(EnumCard::Blockchain(IBlockchain::new("Ethereum", EnumColor::DarkBlue, 3, 4)));
+    player2_deck.add(EnumCard::Blockchain(IBlockchain::new("Starknet", EnumColor::DarkBlue, 3, 4)));
     world.write_model_test(@player2_deck);
 
     // Set player one as the next caller and draw cards first
@@ -451,7 +436,5 @@ fn test_all_cards() {
     player_system.set_ready(true, addr);
 
     let hand: ComponentHand = world.read_model(first_caller);
-    println!("Hand: {}", hand);
     assert!(hand.m_cards.len() == 5, "Player should have 5 cards");
-
 }

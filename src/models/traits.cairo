@@ -14,9 +14,9 @@ use zktt::models::structs::{
     StructAsset, StructBlockchain, StructAssetGroup, StructHybridBlockchain
 };
 use zktt::models::actions::{
-    ActionChainReorg, ActionClaimYield, ActionFrontrun, ActionPriorityFee,
-    ActionReplayAttack, ActionGasFee, ActionFiftyOnePercentAttack, ActionSandwichAttack,
-    ActionHardFork, ActionMEVBoost, ActionSoftFork
+    ActionChainReorg, ActionClaimYield, ActionFrontrun, ActionPriorityFee, ActionReplayAttack,
+    ActionGasFee, ActionFiftyOnePercentAttack, ActionSandwichAttack, ActionHardFork, ActionMEVBoost,
+    ActionSoftFork
 };
 use zktt::models::enums::{
     EnumCard, EnumColor, EnumGasFeeType, EnumMoveError, EnumPlayerTarget, EnumHardForkErrors
@@ -98,11 +98,15 @@ impl EnumCardEq of PartialEq<EnumCard> {
             (EnumCard::Blockchain(data1), EnumCard::Blockchain(data2)) => data1 == data2,
             (EnumCard::ChainReorg(data1), EnumCard::ChainReorg(data2)) => data1 == data2,
             (EnumCard::ClaimYield(data1), EnumCard::ClaimYield(data2)) => data1 == data2,
-            (EnumCard::FiftyOnePercentAttack(data1), EnumCard::FiftyOnePercentAttack(data2)) => data1 == data2,
+            (
+                EnumCard::FiftyOnePercentAttack(data1), EnumCard::FiftyOnePercentAttack(data2)
+            ) => data1 == data2,
             (EnumCard::FrontRun(data1), EnumCard::FrontRun(data2)) => data1 == data2,
             (EnumCard::GasFee(data1), EnumCard::GasFee(data2)) => data1 == data2,
             (EnumCard::HardFork(data1), EnumCard::HardFork(data2)) => data1 == data2,
-            (EnumCard::HybridBlockchain(data1), EnumCard::HybridBlockchain(data2)) => data1 == data2,
+            (
+                EnumCard::HybridBlockchain(data1), EnumCard::HybridBlockchain(data2)
+            ) => data1 == data2,
             (EnumCard::MEVBoost(data1), EnumCard::MEVBoost(data2)) => data1 == data2,
             (EnumCard::PriorityFee(data1), EnumCard::PriorityFee(data2)) => data1 == data2,
             (EnumCard::ReplayAttack(data1), EnumCard::ReplayAttack(data2)) => data1 == data2,
@@ -199,7 +203,7 @@ impl ActionFiftyOnePercentAttackDisplay of Display<ActionFiftyOnePercentAttack> 
             "Steal Asset Group: Value {0}, Index: {1}", *self.m_value, *self.m_index
         );
         f.buffer.append(@str);
-        
+
         let mut index = 0;
         while index < self.m_set.len() {
             if let Option::Some(bc) = self.m_set.get(index) {
@@ -284,7 +288,9 @@ impl ActionReplayAttackDisplay of Display<ActionReplayAttack> {
 impl ActionSandwichAttackDisplay of Display<ActionSandwichAttack> {
     fn fmt(self: @ActionSandwichAttack, ref f: Formatter) -> Result<(), Error> {
         let str: ByteArray = format!(
-            "Force any player to give you 5 ETH: Value: {0}, Index: {1}", *self.m_value, *self.m_index
+            "Force any player to give you 5 ETH: Value: {0}, Index: {1}",
+            *self.m_value,
+            *self.m_index
         );
         f.buffer.append(@str);
         return Result::Ok(());
@@ -555,9 +561,7 @@ impl StructBlockchainDisplay of Display<StructBlockchain> {
 impl StructHybridBlockchainDisplay of Display<StructHybridBlockchain> {
     fn fmt(self: @StructHybridBlockchain, ref f: Formatter) -> Result<(), Error> {
         let str: ByteArray = format!(
-            "Hybrid Blockchain: {0}, Facing Up: {1}",
-            self.m_name,
-            self.m_bc_facing_up_index
+            "Hybrid Blockchain: {0}, Facing Up: {1}", self.m_name, self.m_bc_facing_up_index
         );
         f.buffer.append(@str);
         return Result::Ok(());
@@ -615,9 +619,7 @@ impl AssetGroupImpl of IAssetGroup {
 
 #[generate_trait]
 impl BlockchainImpl of IBlockchain {
-    fn new(
-        name: ByteArray, bc_type: EnumColor, fee: u8, value: u8
-    ) -> StructBlockchain nopanic {
+    fn new(name: ByteArray, bc_type: EnumColor, fee: u8, value: u8) -> StructBlockchain nopanic {
         return StructBlockchain { m_name: name, m_bc_type: bc_type, m_fee: fee, m_value: value };
     }
 }
@@ -671,7 +673,6 @@ impl DealerImpl of IDealer {
 
             if let Option::Some(_) = self.m_cards.get(card_index.into()) {
                 shuffled_cards.append(self.m_cards[card_index.into()].clone());
-                
             }
         };
         self.m_cards = shuffled_cards;
@@ -844,13 +845,10 @@ impl DeckImpl of IDeck {
     }
 
     fn check_complete_set(
-        self: @ComponentDeck,
-        asset_group_array: Array<StructBlockchain>,
-        bc_type: @EnumColor
+        self: @ComponentDeck, asset_group_array: Array<StructBlockchain>, bc_type: @EnumColor
     ) -> bool {
         let required_count = match bc_type {
-            EnumColor::Blue(_) | EnumColor::DarkBlue(_) |
-            EnumColor::Gold(_) => 2,
+            EnumColor::Blue(_) | EnumColor::DarkBlue(_) | EnumColor::Gold(_) => 2,
             EnumColor::LightBlue(_) => 4,
             _ => 3
         };
@@ -964,7 +962,9 @@ impl EnumCardImpl of IEnumCard {
             EnumCard::FrontRun(data) => { return *data.m_value; },
             EnumCard::GasFee(data) => { return *data.m_value; },
             EnumCard::HardFork(data) => { return *data.m_value; },
-            EnumCard::HybridBlockchain(data) => { return *data.m_bcs[(*data.m_bc_facing_up_index).into()].m_value; },
+            EnumCard::HybridBlockchain(data) => {
+                return *data.m_bcs[(*data.m_bc_facing_up_index).into()].m_value;
+            },
             EnumCard::MEVBoost(data) => { return *data.m_value; },
             EnumCard::PriorityFee(data) => { return *data.m_value; },
             EnumCard::ReplayAttack(data) => { return *data.m_value; },
@@ -975,7 +975,7 @@ impl EnumCardImpl of IEnumCard {
 
     fn remove_one_index(ref self: EnumCard) -> () {
         assert!(self.get_index() > 0, "No more indices left for {0}", self);
-        
+
         let new_card: EnumCard = match self.clone() {
             EnumCard::Asset(mut data) => {
                 data.m_index -= 1;
@@ -1048,20 +1048,20 @@ impl EnumCardImpl of IEnumCard {
 
 #[generate_trait]
 impl FiftyOnePercentAttackImpl of IFiftyOnePercentAttack {
-    fn new(player_targeted: ContractAddress, set: Array<StructBlockchain>, value: u8, copies_left: u8
+    fn new(
+        player_targeted: ContractAddress, set: Array<StructBlockchain>, value: u8, copies_left: u8
     ) -> ActionFiftyOnePercentAttack nopanic {
         return ActionFiftyOnePercentAttack {
-            m_player_targeted: player_targeted,
-            m_set: set,
-            m_value: value,
-            m_index: copies_left
+            m_player_targeted: player_targeted, m_set: set, m_value: value, m_index: copies_left
         };
     }
 }
 
 #[generate_trait]
 impl FrontRunImpl of IFrontRun {
-    fn new(player_targeted: ContractAddress, blockchain_name: ByteArray, value: u8, copies_left: u8) -> ActionFrontrun nopanic {
+    fn new(
+        player_targeted: ContractAddress, blockchain_name: ByteArray, value: u8, copies_left: u8
+    ) -> ActionFrontrun nopanic {
         return ActionFrontrun {
             m_player_targeted: player_targeted,
             m_blockchain_name: blockchain_name,
@@ -1204,12 +1204,11 @@ impl HandImpl of IHand {
 
 #[generate_trait]
 impl HardForkImpl of IHardFork {
-    fn new(owner: ContractAddress, timestamp_used: u64, value: u8, copies: u8) -> ActionHardFork nopanic {
+    fn new(
+        owner: ContractAddress, timestamp_used: u64, value: u8, copies: u8
+    ) -> ActionHardFork nopanic {
         return ActionHardFork {
-            m_owner: owner,
-            m_timestamp_used: timestamp_used,
-            m_value: value,
-            m_index: copies
+            m_owner: owner, m_timestamp_used: timestamp_used, m_value: value, m_index: copies
         };
     }
 
@@ -1237,10 +1236,8 @@ impl HybridBlockchainImpl of IHybridBlockchain {
     fn new(
         name: ByteArray, bcs: Array<StructBlockchain>, bc_facing_up_index: u8
     ) -> StructHybridBlockchain nopanic {
-        return StructHybridBlockchain { 
-            m_name: name, 
-            m_bcs: bcs, 
-            m_bc_facing_up_index: bc_facing_up_index 
+        return StructHybridBlockchain {
+            m_name: name, m_bcs: bcs, m_bc_facing_up_index: bc_facing_up_index
         };
     }
 }
@@ -1248,11 +1245,7 @@ impl HybridBlockchainImpl of IHybridBlockchain {
 #[generate_trait]
 impl MEVBoostImpl of IMEVBoost {
     fn new(set: StructAssetGroup, value: u8, copies_left: u8) -> ActionMEVBoost nopanic {
-        return ActionMEVBoost {
-            m_set: set,
-            m_value: value,
-            m_index: copies_left
-        };
+        return ActionMEVBoost { m_set: set, m_value: value, m_index: copies_left };
     }
 }
 
@@ -1285,21 +1278,17 @@ impl PriorityFeeImpl of IPriorityFee {
 #[generate_trait]
 impl ReplayAttackImpl of IReplayAttack {
     fn new(owner: ContractAddress, value: u8, copies: u8) -> ActionReplayAttack nopanic {
-        return ActionReplayAttack {
-            m_owner: owner,
-            m_value: value,
-            m_index: copies
-        };
+        return ActionReplayAttack { m_owner: owner, m_value: value, m_index: copies };
     }
 }
 
 #[generate_trait]
 impl SandwichAttackImpl of ISandwichAttack {
-    fn new(player_targeted: ContractAddress, value: u8, copies_left: u8) -> ActionSandwichAttack nopanic {
+    fn new(
+        player_targeted: ContractAddress, value: u8, copies_left: u8
+    ) -> ActionSandwichAttack nopanic {
         return ActionSandwichAttack {
-            m_player_targeted: player_targeted,
-            m_value: value,
-            m_index: copies_left
+            m_player_targeted: player_targeted, m_value: value, m_index: copies_left
         };
     }
 }
@@ -1307,11 +1296,7 @@ impl SandwichAttackImpl of ISandwichAttack {
 #[generate_trait]
 impl SoftForkImpl of ISoftFork {
     fn new(set: StructAssetGroup, value: u8, copies_left: u8) -> ActionSoftFork nopanic {
-        return ActionSoftFork {
-            m_set: set,
-            m_value: value,
-            m_index: copies_left
-        };
+        return ActionSoftFork { m_set: set, m_value: value, m_index: copies_left };
     }
 }
 
@@ -1336,10 +1321,7 @@ impl ChainReorgDefault of Default<ActionChainReorg> {
 
 impl ClaimYieldDefault of Default<ActionClaimYield> {
     fn default() -> ActionClaimYield nopanic {
-        return ActionClaimYield {
-            m_value: 2,
-            m_index: 3
-        };
+        return ActionClaimYield { m_value: 2, m_index: 3 };
     }
 }
 
@@ -1379,10 +1361,7 @@ impl HardForkDefault of Default<ActionHardFork> {
 impl MEVBoostDefault of Default<ActionMEVBoost> {
     fn default() -> ActionMEVBoost nopanic {
         return ActionMEVBoost {
-            m_set: StructAssetGroup {
-                m_set: array![],
-                m_total_fee_value: 0
-            },
+            m_set: StructAssetGroup { m_set: array![], m_total_fee_value: 0 },
             m_value: 4,
             m_index: 3
         };
@@ -1391,19 +1370,14 @@ impl MEVBoostDefault of Default<ActionMEVBoost> {
 
 impl PriorityFeeDefault of Default<ActionPriorityFee> {
     fn default() -> ActionPriorityFee nopanic {
-        return ActionPriorityFee {
-            m_value: 1,
-            m_index: 10
-        };
+        return ActionPriorityFee { m_value: 1, m_index: 10 };
     }
 }
 
 impl ReplayAttackDefault of Default<ActionReplayAttack> {
     fn default() -> ActionReplayAttack nopanic {
         return ActionReplayAttack {
-            m_owner: starknet::contract_address_const::<0x0>(),
-            m_value: 1,
-            m_index: 2
+            m_owner: starknet::contract_address_const::<0x0>(), m_value: 1, m_index: 2
         };
     }
 }
@@ -1411,9 +1385,7 @@ impl ReplayAttackDefault of Default<ActionReplayAttack> {
 impl SandwichAttackDefault of Default<ActionSandwichAttack> {
     fn default() -> ActionSandwichAttack nopanic {
         return ActionSandwichAttack {
-            m_player_targeted: starknet::contract_address_const::<0x0>(),
-            m_value: 3,
-            m_index: 3
+            m_player_targeted: starknet::contract_address_const::<0x0>(), m_value: 3, m_index: 3
         };
     }
 }
@@ -1421,10 +1393,7 @@ impl SandwichAttackDefault of Default<ActionSandwichAttack> {
 impl SoftForkDefault of Default<ActionSoftFork> {
     fn default() -> ActionSoftFork nopanic {
         return ActionSoftFork {
-            m_set: StructAssetGroup {
-                m_set: array![],
-                m_total_fee_value: 0
-            },
+            m_set: StructAssetGroup { m_set: array![], m_total_fee_value: 0 },
             m_value: 3,
             m_index: 3
         };
@@ -1433,10 +1402,7 @@ impl SoftForkDefault of Default<ActionSoftFork> {
 
 impl AssetGroupDefault of Default<StructAssetGroup> {
     fn default() -> StructAssetGroup nopanic {
-        return StructAssetGroup {
-            m_set: array![],
-            m_total_fee_value: 0
-        };
+        return StructAssetGroup { m_set: array![], m_total_fee_value: 0 };
     }
 }
 

@@ -23,8 +23,8 @@ mod player_system {
         ComponentDealer, ComponentDiscardPile
     };
     use zktt::models::traits::{
-        IEnumCard, IPlayer, IDeck, IDealer, IHand, IGasFee, IAssetGroup, IGame, IAsset,
-        IBlockchain, IDeposit
+        IEnumCard, IPlayer, IDeck, IDealer, IHand, IGasFee, IAssetGroup, IGame, IAsset, IBlockchain,
+        IDeposit
     };
     use zktt::models::enums::{EnumGasFeeType, EnumPlayerTarget, EnumGameState};
     use dojo::world::IWorldDispatcher;
@@ -156,17 +156,18 @@ mod player_system {
             let game: ComponentGame = world.read_model(table);
             let mut everyone_ready: bool = true;
 
-            for addr in game.m_players {
-                let player: ComponentPlayer = world.read_model(addr);
-                if !player.m_is_ready {
-                    everyone_ready = false;
-                }
-            };
+            for addr in game
+                .m_players {
+                    let player: ComponentPlayer = world.read_model(addr);
+                    if !player.m_is_ready {
+                        everyone_ready = false;
+                    }
+                };
             return everyone_ready;
         }
 
-        /// Take all cards owned by player and put them in the discard pile, effectively re-possessing
-        /// all player cards back. Normally after player leaves or game ends.
+        /// Take all cards owned by player and put them in the discard pile, effectively
+        /// re-possessing all player cards back. Normally after player leaves or game ends.
         ///
         /// Inputs:
         /// *player_address*: The contract address of the player in question.
@@ -175,7 +176,11 @@ mod player_system {
         /// Output:
         /// None.
         /// Can Panic?: yes
-        fn _relinquish_assets(player_address: ContractAddress, table: ContractAddress, ref world: dojo::world::WorldStorage) -> () {
+        fn _relinquish_assets(
+            player_address: ContractAddress,
+            table: ContractAddress,
+            ref world: dojo::world::WorldStorage
+        ) -> () {
             let mut hand: ComponentHand = world.read_model(player_address);
             let mut deck: ComponentDeck = world.read_model(player_address);
             let mut deposit: ComponentDeposit = world.read_model(player_address);

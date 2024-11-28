@@ -23,16 +23,14 @@ mod game_system {
         ComponentPlayer, ComponentDealer
     };
     use zktt::models::traits::{
-        IEnumCard, IPlayer, ICard, IDeck, IDealer, IHand, IGasFee, IAssetGroup, IGame,
-        IAsset, IBlockchain, IDeposit, IClaimYield, IFiftyOnePercentAttack, IChainReorg, IFrontRun,
-        IHybridBlockchain,ISandwichAttack, IPriorityFee, IReplayAttack, IHardFork, ISoftFork, IMEVBoost,
-        ClaimYieldDefault, ChainReorgDefault, FrontrunDefault, MEVBoostDefault, PriorityFeeDefault,
-        FiftyOnePercentAttackDefault, HardForkDefault, SoftForkDefault, ReplayAttackDefault,
-        SandwichAttackDefault, EnumCardDisplay
+        IEnumCard, IPlayer, ICard, IDeck, IDealer, IHand, IGasFee, IAssetGroup, IGame, IAsset,
+        IBlockchain, IDeposit, IClaimYield, IFiftyOnePercentAttack, IChainReorg, IFrontRun,
+        IHybridBlockchain, ISandwichAttack, IPriorityFee, IReplayAttack, IHardFork, ISoftFork,
+        IMEVBoost, ClaimYieldDefault, ChainReorgDefault, FrontrunDefault, MEVBoostDefault,
+        PriorityFeeDefault, FiftyOnePercentAttackDefault, HardForkDefault, SoftForkDefault,
+        ReplayAttackDefault, SandwichAttackDefault, EnumCardDisplay
     };
-    use zktt::models::enums::{
-        EnumGasFeeType, EnumPlayerTarget, EnumGameState, EnumColor, EnumCard
-    };
+    use zktt::models::enums::{EnumGasFeeType, EnumPlayerTarget, EnumGameState, EnumColor, EnumCard};
     use zktt::systems::player::player_system;
     use dojo::world::IWorldDispatcher;
     use core::poseidon::poseidon_hash_span;
@@ -61,7 +59,10 @@ mod game_system {
             let mut game: ComponentGame = world.read_model(table);
             assert!(game.m_state != EnumGameState::Started, "Game has already started");
             assert!(game.m_players.len() >= 2, "Missing at least a player before starting");
-            assert!(player_system::InternalImpl::_is_everyone_ready(@world, table), "Everyone needs to be ready");
+            assert!(
+                player_system::InternalImpl::_is_everyone_ready(@world, table),
+                "Everyone needs to be ready"
+            );
 
             let cards_in_order = InternalImpl::_create_cards();
             let mut flattened_cards = InternalImpl::_flatten(ref world, cards_in_order);
@@ -119,7 +120,8 @@ mod game_system {
         /// None.
         /// Can Panic?: yes
         fn end(ref self: ContractState, table: ContractAddress) -> () {
-            // assert!(get_caller_address() == starknet::contract_address_const::<0x0>(), "Unauthorized");
+            // assert!(get_caller_address() == starknet::contract_address_const::<0x0>(),
+            // "Unauthorized");
 
             let mut world = InternalImpl::world_default(@self);
             let mut game: ComponentGame = world.read_model(table);
@@ -129,9 +131,10 @@ mod game_system {
             game.m_state = EnumGameState::Ended;
 
             // Double check that we have reaquired all assets from all players.
-            for addr in game.m_players {
-                player_system::InternalImpl::_relinquish_assets(addr, table, ref world);
-            };
+            for addr in game
+                .m_players {
+                    player_system::InternalImpl::_relinquish_assets(addr, table, ref world);
+                };
         }
     }
 
@@ -187,7 +190,9 @@ mod game_system {
         /// None.
         /// Can Panic?: yes
         fn _distribute_cards(
-            ref world: dojo::world::WorldStorage, ref players: Array<ContractAddress>, ref cards: Array<u32>
+            ref world: dojo::world::WorldStorage,
+            ref players: Array<ContractAddress>,
+            ref cards: Array<u32>
         ) -> () {
             if players.is_empty() {
                 panic!("There are no players to distribute cards to!");
@@ -261,26 +266,82 @@ mod game_system {
                 EnumCard::Blockchain(IBlockchain::new("ZKSync", EnumColor::Grey, 1, 2)),
                 // Hybrid Blockchains.
                 // Pink + Blue.
-                EnumCard::HybridBlockchain(IHybridBlockchain::new("Moonbeam & Tezos", array![IBlockchain::new("Osmosis", EnumColor::Pink, 1, 1),
-                    IBlockchain::new("Ton", EnumColor::Blue, 1, 1)], 0)),
+                EnumCard::HybridBlockchain(
+                    IHybridBlockchain::new(
+                        "Moonbeam & Tezos",
+                        array![
+                            IBlockchain::new("Osmosis", EnumColor::Pink, 1, 1),
+                            IBlockchain::new("Ton", EnumColor::Blue, 1, 1)
+                        ],
+                        0
+                    )
+                ),
                 // Pink + Light Blue.
-                EnumCard::HybridBlockchain(IHybridBlockchain::new("Unichain + Zora", array![IBlockchain::new("Polkadot", EnumColor::Pink, 1, 1),
-                    IBlockchain::new("Metis", EnumColor::LightBlue, 1, 2)], 0)),
+                EnumCard::HybridBlockchain(
+                    IHybridBlockchain::new(
+                        "Unichain + Zora",
+                        array![
+                            IBlockchain::new("Polkadot", EnumColor::Pink, 1, 1),
+                            IBlockchain::new("Metis", EnumColor::LightBlue, 1, 2)
+                        ],
+                        0
+                    )
+                ),
                 // LightBlue + Gold.
-                EnumCard::HybridBlockchain(IHybridBlockchain::new("Sui + BSC", array![IBlockchain::new("Fantom", EnumColor::LightBlue, 1, 2),
-                    IBlockchain::new("Dogecoin", EnumColor::Gold, 1, 2)], 0)),
+                EnumCard::HybridBlockchain(
+                    IHybridBlockchain::new(
+                        "Sui + BSC",
+                        array![
+                            IBlockchain::new("Fantom", EnumColor::LightBlue, 1, 2),
+                            IBlockchain::new("Dogecoin", EnumColor::Gold, 1, 2)
+                        ],
+                        0
+                    )
+                ),
                 // LightBlue + Red.
-                EnumCard::HybridBlockchain(IHybridBlockchain::new("Cardano + Tron", array![IBlockchain::new("Base", EnumColor::LightBlue, 1, 2),
-                    IBlockchain::new("Avalanche", EnumColor::Red, 2, 4)], 0)),
+                EnumCard::HybridBlockchain(
+                    IHybridBlockchain::new(
+                        "Cardano + Tron",
+                        array![
+                            IBlockchain::new("Base", EnumColor::LightBlue, 1, 2),
+                            IBlockchain::new("Avalanche", EnumColor::Red, 2, 4)
+                        ],
+                        0
+                    )
+                ),
                 // Red + DarkBlue.
-                EnumCard::HybridBlockchain(IHybridBlockchain::new("Sei + Hyperliquid", array![IBlockchain::new("Optimism", EnumColor::Red, 2, 4),
-                    IBlockchain::new("Starknet", EnumColor::DarkBlue, 3, 4)], 0)),
+                EnumCard::HybridBlockchain(
+                    IHybridBlockchain::new(
+                        "Sei + Hyperliquid",
+                        array![
+                            IBlockchain::new("Optimism", EnumColor::Red, 2, 4),
+                            IBlockchain::new("Starknet", EnumColor::DarkBlue, 3, 4)
+                        ],
+                        0
+                    )
+                ),
                 // Yellow + Purple.
-                EnumCard::HybridBlockchain(IHybridBlockchain::new("Terra + Pulse", array![IBlockchain::new("Celo", EnumColor::Yellow, 2, 3),
-                    IBlockchain::new("Polygon", EnumColor::Purple, 2, 3)], 0)),
+                EnumCard::HybridBlockchain(
+                    IHybridBlockchain::new(
+                        "Terra + Pulse",
+                        array![
+                            IBlockchain::new("Celo", EnumColor::Yellow, 2, 3),
+                            IBlockchain::new("Polygon", EnumColor::Purple, 2, 3)
+                        ],
+                        0
+                    )
+                ),
                 // Grey + Green.
-                EnumCard::HybridBlockchain(IHybridBlockchain::new("Algorand + Flow", array![IBlockchain::new("ZKSync", EnumColor::Grey, 1, 2),
-                    IBlockchain::new("Canto", EnumColor::Green, 1, 1)], 0)),
+                EnumCard::HybridBlockchain(
+                    IHybridBlockchain::new(
+                        "Algorand + Flow",
+                        array![
+                            IBlockchain::new("ZKSync", EnumColor::Grey, 1, 2),
+                            IBlockchain::new("Canto", EnumColor::Green, 1, 1)
+                        ],
+                        0
+                    )
+                ),
                 // Actions.
                 EnumCard::ChainReorg(Default::default()),
                 EnumCard::ClaimYield(Default::default()),
@@ -332,10 +393,7 @@ mod game_system {
                     )
                 ),
                 EnumCard::GasFee(
-                    IGasFee::new(
-                        EnumPlayerTarget::None,
-                        EnumGasFeeType::Any(()),
-                        array![], 3, 3)
+                    IGasFee::new(EnumPlayerTarget::None, EnumGasFeeType::Any(()), array![], 3, 3)
                 ),
                 EnumCard::HardFork(Default::default()),
                 EnumCard::MEVBoost(Default::default()),
@@ -383,8 +441,9 @@ mod game_system {
         /// Output:
         /// None.
         /// Can Panic?: yes
-        fn _assign_winner(ref world: dojo::world::WorldStorage) -> () {
-            // TODO: Determine the winner upon interrupt and reward for the winner
+        fn _assign_winner(
+            ref world: dojo::world::WorldStorage
+        ) -> () { // TODO: Determine the winner upon interrupt and reward for the winner
         }
     }
 }

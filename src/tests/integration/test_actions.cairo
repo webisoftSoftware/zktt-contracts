@@ -29,8 +29,10 @@ use crate::systems::player::{IPlayerSystemDispatcher, IPlayerSystemDispatcherTra
 use crate::models::components::{
     ComponentGame, ComponentHand, ComponentDeposit, ComponentPlayer, ComponentDeck, ComponentDealer
 };
-use crate::models::traits::{ComponentPlayerDisplay, ComponentHandDisplay, IDealer, IAsset, IClaimYield, IHand,
-    PriorityFeeDefault, EnumCardDisplay, EnumCardEq};
+use crate::models::traits::{
+    ComponentPlayerDisplay, ComponentHandDisplay, IDealer, IAsset, IClaimYield, IHand,
+    PriorityFeeDefault, EnumCardDisplay, EnumCardEq
+};
 use crate::tests::utils::{deploy_world, namespace_def};
 use crate::tests::integration::test_game::deploy_game;
 use crate::tests::integration::test_player::deploy_player;
@@ -163,13 +165,10 @@ fn test_play() {
     let hand: ComponentHand = world.read_model(first_caller);
     let card: EnumCard = hand.m_cards.at(0).clone();
 
-    println!("Hand size: {}", hand.m_cards.len());
-    println!("Hand: {}", hand);
     assert!(hand.m_cards.len() == 7, "Player should have 7 cards after drawing");
 
     // Play the card
     action_system.play(card.clone(), addr);
-    println!("Card Played: {}", card);
 
     // Verify player state
     let player: ComponentPlayer = world.read_model(first_caller);
