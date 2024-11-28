@@ -2,6 +2,8 @@ name: CI
 
 on:
   push:
+    branches:
+      - ZKTT-3--Add-Missing-Cards
     paths:
       - '**/*.cairo'
       - '**/*.toml'
