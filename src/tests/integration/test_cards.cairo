@@ -29,7 +29,8 @@ use crate::models::components::{
 };
 use crate::models::traits::{
     IAsset, IBlockchain, IClaimYield, ISandwichAttack, IGasFee, IPriorityFee, IFrontRun,
-    IFiftyOnePercentAttack, IChainReorg, IHand, IDeck, ComponentDeckDisplay
+    IFiftyOnePercentAttack, IChainReorg, IHand, IDeck, ComponentDeckDisplay, ComponentHandDisplay,
+    ComponentDealerDisplay
 };
 use crate::tests::utils::{deploy_world, namespace_def};
 use crate::tests::integration::test_game::deploy_game;
@@ -431,4 +432,26 @@ fn test_fifty_one_percent_attack_card() {
 
     assert!(player1_deck.m_sets == 1, "Player 1 should gain a set");
     assert!(player2_deck_after.m_sets == 0, "Player 2 should lose a set");
+}
+
+#[test]
+fn test_all_cards() {
+    let first_caller: ContractAddress = starknet::contract_address_const::<0x0a>();
+    let second_caller: ContractAddress = starknet::contract_address_const::<0x0b>();
+    let mut world: WorldStorage = deploy_world();
+    let (addr, _game_system): (ContractAddress, IGameSystemDispatcher) = deploy_game(ref world);
+    let player_system = deploy_player(ref world);
+
+    // Setup game with two players
+    starknet::testing::set_contract_address(first_caller);
+    player_system.join("Player 1", addr);
+    player_system.set_ready(true, addr);
+    starknet::testing::set_contract_address(second_caller);
+    player_system.join("Player 2", addr);
+    player_system.set_ready(true, addr);
+
+    let hand: ComponentHand = world.read_model(first_caller);
+    println!("Hand: {}", hand);
+    assert!(hand.m_cards.len() == 5, "Player should have 5 cards");
+
 }

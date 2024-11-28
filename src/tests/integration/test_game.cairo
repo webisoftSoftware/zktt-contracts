@@ -51,17 +51,6 @@ pub fn deploy_game(ref world: WorldStorage) -> (ContractAddress, IGameSystemDisp
         .with_writer_of([dojo::utils::bytearray_hash(@"zktt")].span());
 
     world.sync_perms_and_inits([system_def].span());
-    let cards_in_order = game_system::InternalImpl::_create_cards();
-    let mut flattened_cards = game_system::InternalImpl::_flatten(ref world, cards_in_order);
-    let mut dealer: ComponentDealer = IDealer::new(world.dispatcher.contract_address, array![]);
-
-    let mut index = 0;
-    while index < flattened_cards.len() {
-        dealer.m_cards.append(index);
-        index += 1;
-    };
-    world.write_model(@dealer);
-
     return (contract_address, system);
 }
 
@@ -72,9 +61,6 @@ fn test_start() {
     let mut world: WorldStorage = deploy_world();
     let (addr, _game_system): (ContractAddress, IGameSystemDispatcher) = deploy_game(ref world);
     let player_system: IPlayerSystemDispatcher = deploy_player(ref world);
-
-    let mut dealer: ComponentDealer = world.read_model(world.dispatcher.contract_address);
-    assert!(!dealer.m_cards.is_empty(), "Dealer should have cards!");
 
     // Provide deterministic seed
     starknet::testing::set_block_timestamp(240);
@@ -87,6 +73,9 @@ fn test_start() {
     starknet::testing::set_contract_address(second_caller);
     player_system.join("Player 2", addr);
     player_system.set_ready(true, addr);
+
+    let mut dealer: ComponentDealer = world.read_model(addr);
+    assert!(!dealer.m_cards.is_empty(), "Dealer should have cards!");
 
     let game: ComponentGame = world.read_model(addr);
     assert!(game.m_state == EnumGameState::Started, "Game should have started!");
@@ -197,7 +186,7 @@ fn test_start_with_one_player() {
 }
 
 #[test]
-#[should_panic(expected: ("Game has already started or invalid game ID", 'ENTRYPOINT_FAILED'))]
+#[should_panic(expected: ("Game has already started", 'ENTRYPOINT_FAILED'))]
 fn test_start_game_twice() {
     let first_caller: ContractAddress = starknet::contract_address_const::<0x0a>();
     let second_caller: ContractAddress = starknet::contract_address_const::<0x0b>();

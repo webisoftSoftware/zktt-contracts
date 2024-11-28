@@ -29,7 +29,8 @@ use crate::systems::player::{IPlayerSystemDispatcher, IPlayerSystemDispatcherTra
 use crate::models::components::{
     ComponentGame, ComponentHand, ComponentDeposit, ComponentPlayer, ComponentDeck, ComponentDealer
 };
-use crate::models::traits::{ComponentPlayerDisplay, IDealer, IAsset, IClaimYield, IHand};
+use crate::models::traits::{ComponentPlayerDisplay, ComponentHandDisplay, IDealer, IAsset, IClaimYield, IHand,
+    PriorityFeeDefault, EnumCardDisplay, EnumCardEq};
 use crate::tests::utils::{deploy_world, namespace_def};
 use crate::tests::integration::test_game::deploy_game;
 use crate::tests::integration::test_player::deploy_player;
@@ -149,6 +150,9 @@ fn test_play() {
     player_system.join("Player 2", addr);
     player_system.set_ready(true, addr);
 
+    let hand: ComponentHand = world.read_model(first_caller);
+    assert!(hand.m_cards.len() == 5, "Player should have 5 cards before drawing");
+
     // Set player one as the next caller
     starknet::testing::set_contract_address(first_caller);
 
@@ -159,8 +163,13 @@ fn test_play() {
     let hand: ComponentHand = world.read_model(first_caller);
     let card: EnumCard = hand.m_cards.at(0).clone();
 
+    println!("Hand size: {}", hand.m_cards.len());
+    println!("Hand: {}", hand);
+    assert!(hand.m_cards.len() == 7, "Player should have 7 cards after drawing");
+
     // Play the card
-    action_system.play(card, addr);
+    action_system.play(card.clone(), addr);
+    println!("Card Played: {}", card);
 
     // Verify player state
     let player: ComponentPlayer = world.read_model(first_caller);
@@ -168,7 +177,12 @@ fn test_play() {
 
     // Verify card moved to appropriate location
     let hand: ComponentHand = world.read_model(first_caller);
-    assert!(hand.m_cards.len() == 6, "Card should be removed from hand");
+
+    if card == EnumCard::PriorityFee(Default::default()) {
+        assert!(hand.m_cards.len() == 8, "Player should have 8 cards after playing");
+    } else {
+        assert!(hand.m_cards.len() == 6, "Player should have 6 cards after playing");
+    }
 }
 
 #[test]
