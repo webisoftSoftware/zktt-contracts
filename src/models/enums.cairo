@@ -8,46 +8,61 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 use starknet::ContractAddress;
-use zktt::models::structs::{
+use zktt::models::structs::{StructAsset, StructBlockchain, StructHybridBlockchain};
+use zktt::models::actions::{
     ActionChainReorg, ActionClaimYield, ActionFrontrun, ActionPriorityFee, ActionReplayAttack,
-    ActionGasFee, ActionFiftyOnePercentAttack, ActionSandwichAttack, StructAsset, StructBlockchain,
+    ActionGasFee, ActionFiftyOnePercentAttack, ActionSandwichAttack, ActionHardFork, ActionMEVBoost,
+    ActionSoftFork
+};
+use zktt::models::traits::{
+    StructAssetEq, StructAssetGroupEq, StructBlockchainEq, StructHybridBlockchainEq,
+    ActionFrontrunEq, ActionGasFeeEq, ActionFiftyOnePercentAttackEq, ActionHardForkEq,
+    ActionMEVBoostEq, ActionSoftForkEq
 };
 
 ///////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
-/////////////////////////////// ENUMS /////////////////////////////////
+/////////////////////////////// CARDS /////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
 
-#[derive(Drop, Serde, Clone, Introspect, PartialEq, Debug)]
+#[derive(Drop, Serde, Clone, Introspect, Debug)]
 pub enum EnumCard {
     Asset: StructAsset,
     Blockchain: StructBlockchain,
     ChainReorg: ActionChainReorg,
     ClaimYield: ActionClaimYield,
+    FiftyOnePercentAttack: ActionFiftyOnePercentAttack,
+    FrontRun: ActionFrontrun,
     GasFee: ActionGasFee,
+    HardFork: ActionHardFork,
+    HybridBlockchain: StructHybridBlockchain,
+    MEVBoost: ActionMEVBoost,
     PriorityFee: ActionPriorityFee,
     ReplayAttack: ActionReplayAttack,
-    FrontRun: ActionFrontrun,
-    FiftyOnePercentAttack: ActionFiftyOnePercentAttack,
     SandwichAttack: ActionSandwichAttack,
+    SoftFork: ActionSoftFork,
 }
+
+////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
+/////////////////////////////// STATES /////////////////////////////////
+////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
 
 #[derive(Drop, Copy, Serde, PartialEq, Introspect, Debug)]
 pub enum EnumGameState {
-    WaitingForPlayers: (),
-    WaitingForRent: (),
-    Started: (),
-    Ended: ()
+    WaitingForPlayers,
+    WaitingForRent,
+    Started,
+    Ended
 }
 
-#[derive(Drop, Copy, Serde, PartialEq, Introspect, Debug)]
-pub enum EnumMoveError {
-    CardAlreadyPresent,
-    CardNotFound,
-    NotEnoughMoves,
-    SetAlreadyPresent
-}
+///////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////
+/////////////////////////////// TYPES /////////////////////////////////
+///////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////
 
 #[derive(Drop, Copy, Serde, PartialEq, Introspect, Debug)]
 pub enum EnumPlayerTarget {
@@ -59,11 +74,12 @@ pub enum EnumPlayerTarget {
 #[derive(Drop, Copy, Serde, PartialEq, Introspect, Debug)]
 pub enum EnumGasFeeType {
     Any: (),
-    AgainstTwo: (EnumBlockchainType, EnumBlockchainType),
+    AgainstTwo: (EnumColor, EnumColor),
 }
 
 #[derive(Drop, Serde, Copy, PartialEq, Introspect, Debug)]
-pub enum EnumBlockchainType {
+pub enum EnumColor {
+    Immutable,
     Blue,
     DarkBlue,
     Gold,
@@ -75,3 +91,24 @@ pub enum EnumBlockchainType {
     Red,
     Yellow,
 }
+
+////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
+/////////////////////////////// ERRORS /////////////////////////////////
+////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
+
+#[derive(Drop, Copy, Serde, PartialEq, Introspect, Debug)]
+pub enum EnumMoveError {
+    CardAlreadyPresent,
+    CardNotFound,
+    NotEnoughMoves,
+    SetAlreadyPresent
+}
+
+#[derive(Drop, Serde, Copy, PartialEq, Debug)]
+pub enum EnumHardForkErrors {
+    InvalidCard, // When card played against is not an onchain event targeting owner of the card.
+    TooLate // When card is played too late (after 10 secs).
+}
+
