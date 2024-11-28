@@ -148,7 +148,7 @@ struct ActionMEVBoost {
 /// Fields:
 /// *m_value*: Value of the card itself, in case we want to give it as eth.
 /// *m_index*: The card index from all of its duplicates in the deck.
-#[derive(Drop, Serde, Clone, Introspect, PartialEq, Debug)]
+#[derive(Drop, Serde, Clone, Introspect, Debug)]
 struct ActionPriorityFee {
     m_value: u8,
     m_index: u8
@@ -159,7 +159,7 @@ struct ActionPriorityFee {
 /// Fields:
 /// *m_value*: Value of the card itself, in case we want to give it as eth.
 /// *m_index*: The card index from all of its duplicates in the deck.
-#[derive(Drop, Serde, Clone, Introspect, PartialEq, Debug)]
+#[derive(Drop, Serde, Clone, Introspect, Debug)]
 struct ActionReplayAttack {
     m_owner: ContractAddress,
     m_value: u8,

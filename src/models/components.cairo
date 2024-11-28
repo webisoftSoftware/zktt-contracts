@@ -16,6 +16,14 @@ use zktt::models::enums::{EnumCard, EnumGameState};
 ////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
 
+#[derive(Drop, Serde, Clone, Debug)]
+#[dojo::model]
+pub struct ComponentCard {
+    #[key]
+    pub m_ent_index: u32,
+    pub m_card_info: EnumCard
+}
+
 /// Component that represents the Pile of cards in the middle of the board, not owned by any player
 /// yet.
 ///
@@ -26,14 +34,6 @@ pub struct ComponentDealer {
     #[key]
     pub m_ent_owner: ContractAddress,
     pub m_cards: Array<u32>
-}
-
-#[derive(Drop, Serde, Clone, Debug)]
-#[dojo::model]
-pub struct ComponentCard {
-    #[key]
-    pub m_ent_index: u32,
-    pub m_card_info: EnumCard
 }
 
 /// Component that represents the deck containing all blockchains not in the player's hand.

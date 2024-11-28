@@ -7,17 +7,18 @@
 ////////////////////////////////                                    ////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+use starknet::ContractAddress;
+use zktt::models::structs::{StructAsset, StructBlockchain, StructHybridBlockchain};
 use zktt::models::actions::{
     ActionChainReorg, ActionClaimYield, ActionFrontrun, ActionPriorityFee,
     ActionReplayAttack, ActionGasFee, ActionFiftyOnePercentAttack, ActionSandwichAttack, ActionHardFork,
     ActionMEVBoost, ActionSoftFork
 };
 use zktt::models::traits::{
+    StructAssetEq, StructAssetGroupEq, StructBlockchainEq, StructHybridBlockchainEq,
     ActionFrontrunEq, ActionGasFeeEq, ActionFiftyOnePercentAttackEq, ActionHardForkEq,
     ActionMEVBoostEq, ActionSoftForkEq
 };
-use starknet::ContractAddress;
-use zktt::models::structs::{StructAsset, StructBlockchain};
 
 ///////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
@@ -25,21 +26,22 @@ use zktt::models::structs::{StructAsset, StructBlockchain};
 ///////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
 
-#[derive(Drop, Serde, Clone, Introspect, PartialEq, Debug)]
+#[derive(Drop, Serde, Clone, Introspect, Debug)]
 pub enum EnumCard {
     Asset: StructAsset,
     Blockchain: StructBlockchain,
     ChainReorg: ActionChainReorg,
     ClaimYield: ActionClaimYield,
+    FiftyOnePercentAttack: ActionFiftyOnePercentAttack,
+    FrontRun: ActionFrontrun,
     GasFee: ActionGasFee,
     HardFork: ActionHardFork,
+    HybridBlockchain: StructHybridBlockchain,
     MEVBoost: ActionMEVBoost,
     PriorityFee: ActionPriorityFee,
     ReplayAttack: ActionReplayAttack,
-    SoftFork: ActionSoftFork,
-    FrontRun: ActionFrontrun,
-    FiftyOnePercentAttack: ActionFiftyOnePercentAttack,
     SandwichAttack: ActionSandwichAttack,
+    SoftFork: ActionSoftFork,
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -77,6 +79,7 @@ pub enum EnumGasFeeType {
 
 #[derive(Drop, Serde, Copy, PartialEq, Introspect, Debug)]
 pub enum EnumColor {
+    Immutable,
     Blue,
     DarkBlue,
     Gold,

@@ -42,36 +42,10 @@ pub struct StructBlockchain {
     m_value: u8
 }
 
-///////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////
-/////////////////////////////// PARTIALEQ /////////////////////////////////
-///////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////
-
-impl StructAssetEq of PartialEq<StructAsset> {
-    fn eq(lhs: @StructAsset, rhs: @StructAsset) -> bool {
-        return lhs.m_name == rhs.m_name && lhs.m_index == rhs.m_index;
-    }
-}
-
-impl StructAssetGroupEq of PartialEq<StructAssetGroup> {
-    fn eq(lhs: @StructAssetGroup, rhs: @StructAssetGroup) -> bool {
-        let mut index: usize = 0;
-        return loop {
-            if index >= lhs.m_set.len() {
-                break true;
-            }
-
-            if lhs.m_set.at(index) != rhs.m_set.at(index) {
-                break false;
-            }
-            index += 1;
-        };
-    }
-}
-
-impl StructBlockchainEq of PartialEq<StructBlockchain> {
-    fn eq(lhs: @StructBlockchain, rhs: @StructBlockchain) -> bool {
-        return lhs.m_name == rhs.m_name;
-    }
+/// Card containing the info about a specific hybrid blockchain.
+#[derive(Drop, Serde, Clone, Introspect, Debug)]
+pub struct StructHybridBlockchain {
+    m_name: ByteArray,
+    m_bcs: Array<StructBlockchain>,
+    m_bc_facing_up_index: u8
 }
